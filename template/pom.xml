@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.mentat</groupId>
+    <artifactId>leva.cljs</artifactId>
+    <name>leva.cljs</name>
+    <description>Clojurescript / Reagent interface for Leva.</description>
+    <url>https://leva.mentat.org</url>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Sam Ritchie</name>
+        </developer>
+    </developers>
+    <scm>
+        <url>https://github.com/mentat-collective/leva.cljs</url>
+        <connection>scm:git:git://github.com/mentat-collective/leva.cljs.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/mentat-collective/leva.cljs.git</developerConnection>
+    </scm>
+</project>
