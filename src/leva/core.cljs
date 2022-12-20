@@ -35,6 +35,7 @@
 ;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
 ;; for more options
 
+;; TODO use (satisfies? IReactiveAtom src) to check if we should track.
 
 (defn Panel* [opts]
   (when-not (:state opts)
@@ -43,6 +44,7 @@
       (str "Error: we currently require a :state opt."))))
 
   (let [!state (:state opts)
+        options (:options opts)
         [_ set] (useControls
                  (fn []
                    (reduce-kv
@@ -50,10 +52,18 @@
                       (doto acc
                         (o/set
                          (name k)
-                         #js {"value" v
-                              "onChange"
-                              (fn [value _ _]
-                                (swap! !state assoc k value))})))
+                         (if-let [o (get options k nil)]
+                           ;; TODO must be a map.
+                           (clj->js
+                            (assoc o
+                                   :value v
+                                   :onChange
+                                   (fn [value _ _]
+                                     (swap! !state assoc k value))))
+                           #js {"value" v
+                                "onChange"
+                                (fn [value _ _]
+                                  (swap! !state assoc k value))}))))
                     (js-obj)
                     @!state)))]
     (react/useEffect
@@ -71,3 +81,15 @@
 
 (defn Panel [opts]
   [:f> Panel* opts])
+
+;; TODO document that we CAN actually use custom stores and contexts and pin a
+;; panel to a specific page element, once I figure out how to do that for
+;; jsxgraph and mathbox we'll be SOLID. Here is the demo of custom stores etc:
+;; https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-advanced-panels?file=/src/App.jsx:0-26
+;;
+;; There are more demos that live here
+;; https://github.com/pmndrs/leva/tree/main/demo/src/sandboxes, and we can
+;; access them with the same URL.
+;;
+;; For plugins, here is an example:
+;; https://github.com/pmndrs/leva/tree/main/packages/plugin-plot

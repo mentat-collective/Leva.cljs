@@ -29,7 +29,7 @@
    :task
    (do (shell "rm -rf public")
        (run 'publish-gh-pages)
-       (shell "npm run gh-pages"))}
+       (shell "npm run deploy-pages"))}
 
   publish-local
   {:doc "Generate a fresh static build in the `public` folder and start a local
