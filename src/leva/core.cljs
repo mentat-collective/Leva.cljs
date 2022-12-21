@@ -2,7 +2,8 @@
   (:require ["leva" :refer [useControls Leva]]
             ["react" :as react]
             [goog.object :as o]
-            [reagent.core :as reagent]))
+            [reagent.core :as reagent]
+            [reagent.ratom :as ratom]))
 
 ;; ## SCI Customization
 
@@ -35,45 +36,42 @@
 ;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
 ;; for more options
 
-;; TODO use (satisfies? IReactiveAtom src) to check if we should track.
-
 (defn Panel* [opts]
   (when-not (:state opts)
     (throw
      (js/Error.
       (str "Error: we currently require a :state opt."))))
 
-  (let [!state (:state opts)
+  (let [!state  (:state opts)
         options (:options opts)
         [_ set] (useControls
                  (fn []
                    (reduce-kv
                     (fn [acc k v]
-                      (doto acc
-                        (o/set
-                         (name k)
-                         (if-let [o (get options k nil)]
-                           ;; TODO must be a map.
-                           (clj->js
-                            (assoc o
-                                   :value v
-                                   :onChange
-                                   (fn [value _ _]
-                                     (swap! !state assoc k value))))
-                           #js {"value" v
-                                "onChange"
-                                (fn [value _ _]
-                                  (swap! !state assoc k value))}))))
+                      (let [on-change
+                            (fn [value _ _]
+                              (when (not= value (get (.-state !state) k ::not-found))
+                                (swap! !state assoc k value)))]
+                        (doto acc
+                          (o/set
+                           (name k)
+                           ;; TODO Note that `k-opts` must be a map.
+                           (if-let [k-opts (get options k nil)]
+                             (clj->js
+                              (assoc k-opts :value v :onChange on-change))
+                             #js {"value" v "onChange" on-change})))))
                     (js-obj)
                     @!state)))]
     (react/useEffect
      (fn mount []
-       (let [tracker
-             (reagent/track!
-              (fn []
-                (set (clj->js @!state))))]
-         (fn unmount []
-           (reagent/dispose! tracker)))))
+       (if (satisfies? ratom/IReactiveAtom !state)
+         (let [tracker
+               (reagent/track!
+                (fn []
+                  (set (clj->js @!state))))]
+           (fn unmount []
+             (reagent/dispose! tracker)))
+         js/undefined)))
     nil))
 
 (defn PanelOptions [opts]

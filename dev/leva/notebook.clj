@@ -3,7 +3,8 @@
  :no-cache true
  :visibility :hide-ns}
 (ns leva.notebook
-  (:require [mentat.clerk-utils :refer [cljs]]))
+  (:require [mentat.clerk-utils :refer [cljs]]
+            [nextjournal.clerk :as clerk]))
 
 ;; # Leva.cljs
 ;;
@@ -36,7 +37,13 @@
 ;; ## In Progress Demos
 ;;
 ;; Note the Leva panel in the top right. The state is bi-directionally bound to
-;; TWO atoms.
+;; TWO atoms, one of which syncs.
+
+^{::clerk/sync true}
+(def !state1
+  (atom
+   {:number 10 :string "face"}))
+
 ;;
 ;; Try changing the values in the panel and hit `return` to update, or (for
 ;; numeric values) drag the slider on the left side of the input box. Hold down
@@ -45,20 +52,18 @@
 ^{:nextjournal.clerk/visibility {:code :fold}}
 (cljs
  (reagent/with-let
-   [!state1 (reagent/atom
-             {:number 10 :string "face"})
-    !state2 (reagent/atom {:cake 12})]
+   [!state2 (reagent/atom {:cake 12})]
    [:<>
     [leva/PanelOptions {:drag true}]
-    [leva/Panel {:state !state1}]
+    [leva/Panel {:state leva.notebook/!state1}]
     [:input
      {:type :range :min 0 :max 10 :step 1
-      :value (:number @!state1)
+      :value (:number @leva.notebook/!state1)
       :on-change
       (fn [target]
         (let [v (.. target -target -value)]
-          (swap! !state1 assoc :number (js/parseInt v))))}]
-    [:pre (str @!state1)]
+          (swap! leva.notebook/!state1 assoc :number (js/parseInt v))))}]
+    [:pre (str @leva.notebook/!state1)]
 
 
     [leva/Panel {:state !state2}]
@@ -71,6 +76,7 @@
           (swap! !state2 assoc :cake (js/parseInt v))))}]
     [:pre (str @!state2)]]))
 
+@!state1
 
 ;; ## Thanks and Support
 
