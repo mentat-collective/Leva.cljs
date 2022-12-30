@@ -3,7 +3,7 @@
  :no-cache true
  :visibility :hide-ns}
 (ns leva.notebook
-  (:require [mentat.clerk-utils :refer [cljs]]
+  (:require [mentat.clerk-utils.show :refer [show-sci]]
             [nextjournal.clerk :as clerk]))
 
 ;; # Leva.cljs
@@ -50,7 +50,7 @@
 ;; `option/alt` to drag with small steps or `shift` to drag with big steps.
 
 ^{:nextjournal.clerk/visibility {:code :fold}}
-(cljs
+(show-sci
  (reagent/with-let
    [!state2 (reagent/atom {:cake 12})]
    [:<>

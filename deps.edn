@@ -17,7 +17,7 @@
     {:git/url "https://github.com/nextjournal/clerk"
      :git/sha "ec666210f11763fce4fec74072acca1e6525d29f"
      :deps/root "render"}
-    org.mentat/clerk-utils {:mvn/version "0.1.0"}}
+    org.mentat/clerk-utils {:mvn/version "0.2.0"}}
    :exec-fn user/garden!}
 
   :build
