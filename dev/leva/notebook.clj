@@ -52,10 +52,16 @@
 ^{:nextjournal.clerk/visibility {:code :fold}}
 (show-sci
  (reagent/with-let
-   [!state2 (reagent/atom {:cake 12})]
+   [!state2 (reagent/atom {:cake 12})
+    !state3 (reagent/atom {:face 12})]
    [:<>
-    [leva/PanelOptions {:drag true}]
-    [leva/Panel {:state leva.notebook/!state1}]
+    ;; This is the global config mode. You can send your panels in as children if you want for organization, but it doesn't matter.
+    [leva/GlobalConfig {:titleBar
+                        {:drag false
+                         :position {:x 0 :y 30}}}
+     [leva/Panel
+      {:folder-name "state 1"
+       :state leva.notebook/!state1}]]
     [:input
      {:type :range :min 0 :max 10 :step 1
       :value (:number @leva.notebook/!state1)
@@ -66,7 +72,9 @@
     [:pre (str @leva.notebook/!state1)]
 
 
-    [leva/Panel {:state !state2}]
+    [leva/Panel
+     {:folder-name "state 2"
+      :state !state2}]
     [:input
      {:type :range :min 0 :max 10 :step 1
       :value (:cake @!state2)
@@ -74,9 +82,33 @@
       (fn [target]
         (let [v (.. target -target -value)]
           (swap! !state2 assoc :cake (js/parseInt v))))}]
-    [:pre (str @!state2)]]))
+    [:pre (str @!state2)]
+
+    [:div {:style {:display "grid"
+                   :width 300
+                   :gridRowGap 10
+                   :padding 10
+                   :background "#fff"}}
+     [:pre "cake"]
+     ;; note that drag etc are titlebar options!
+     [leva/SubPanel {:fill true :flat true :titleBar false}
+      [leva/Panel {:state !state3}]]
+     [:pre (str @!state3)]
+     ]
+    ]))
 
 @!state1
+
+;; ## Guides
+;;
+;; ## TODO NON-reactive atoms work too
+;;
+;; ## Folders
+
+#_[leva/Panel
+   {:folder-name "state 1"
+    :folder-settings {:collapsed true}
+    :state leva.notebook/!state1}]
 
 ;; ## Thanks and Support
 
