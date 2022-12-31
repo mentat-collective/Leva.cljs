@@ -81,7 +81,8 @@
       :on-change
       (fn [target]
         (let [v (.. target -target -value)]
-          (swap! !state2 assoc :cake (js/parseInt v))))}]]))
+          (swap! !state2 assoc :cake (js/parseInt v))))}]
+    [:pre (str @!state2)]]))
 
 @!state1
 
@@ -90,12 +91,10 @@
 (show-sci
  (reagent/with-let [!state3 (reagent/atom {:face 12})]
    [:<>
-    [leva/SubPanel {:fill true :flat false :titleBar {:drag false}}
+    [leva/SubPanel {:fill true
+                    :titleBar {:drag false}}
      [leva/Panel {:state !state3}]]
     [:pre (str @!state3)]]))
-
-
-
 
 ;; ## Guides
 ;;

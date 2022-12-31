@@ -66,6 +66,25 @@
 ;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
 ;; for more options
 
+;; TODO we are currently walking the atom and building a schema. What we WANT TO
+;; DO IS THIS:
+
+;; - walk the schema, not the atom
+
+;; - For updatable inputs, you can EITHER PROVIDE `value` and `onChange`, or it
+;;   has to be present in the atom.
+;;
+;; - for things like buttons etc, we don't care.
+;;
+;; - Keep a set of keys that we've seen... finally, add to the schema the
+;;   entries in the atom that don't have a schema entry, they need to count too.
+;;   And if you want to keep some OUT, make a cursor.
+;;
+;; If you give `:value` and `:onChange` AND the atom, we can log a warning that
+;; we are ignoring the atom.
+;;
+;; TODO maybe do leva-busy for fun. https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy?file=/src/App.tsx:3276-3281
+
 (defn ^:no-doc atom->schema-fn
   "I guess this is good if we have an atom and options. We also could just have a
   schema... but then how are they going to read the state back out? You need
@@ -88,7 +107,7 @@
                (assoc k-opts :value v :onChange on-change))
               #js {"value" v "onChange" on-change})))))
      (js-obj)
-     @!state)))
+     (.-state !state))))
 
 (defn ^:no-doc opts->argv
   [{:keys [folder-name state options store folder-settings]}]
