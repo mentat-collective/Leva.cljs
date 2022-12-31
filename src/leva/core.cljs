@@ -1,24 +1,21 @@
 (ns leva.core
-  (:require ["leva" :refer [useControls useCreateStore useStoreContext Leva LevaPanel
-                            LevaStoreProvider]]
+  (:require ["leva" :as l
+             :refer
+             [useControls useCreateStore useStoreContext Leva LevaPanel
+              LevaStoreProvider]]
             ["react" :as react]
             [goog.object :as o]
             [reagent.core :as reagent]
             [reagent.ratom :as ratom]))
 
-;; ## SCI Customization
 
-;; TODO: can I tie the useControls to a specific panel instance that I create? I
-;; asked in the channel.
-;;
-;; TODO if it's not a reagent atom, don't install the tracker.
+;; TODO for schema. IF we have an atom... then synchronize!
+;; - if we have a schema... do NOT!
+;; - if we have a schema, can we ALSO allow it to feed updates out? Can we do a schema AND then tie parts of it to an atom?
 
-;; TODO take a `:state` key vs top level
-;;
 ;; TODO scan for more goodies from storybook
 ;; https://leva.pmnd.rs/?path=/story/inputs-string--simple
 
-;; TODO take OPTIONS for the kv pairs
 ;; TODO document specific options, like `:render` boolean fn,
 ;;
 ;; document other inputs https://github.com/pmndrs/leva/blob/main/docs/inputs.md
@@ -31,13 +28,45 @@
 ;; Increase / decrease numbers with arrow keys, with alt (±0.1) and shift (±10)
 ;; modifiers support.
 
+;; ## Special Input Helpers
+
+(defn button
+  "Relevant opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L47-L53"
+  [on-click settings]
+  (l/button on-click (clj->js settings)))
+
+(defn button-group
+  "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L55-L64"
+  [opts]
+  (l/buttonGroup (clj->js opts)))
+
+(defn monitor
+  "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L71-L77
+
+  Tons of stuff with a monitor demo:
+  https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy
+
+  The monitor is going to call a thunk for us that checks on something."
+  [object-or-fn settings]
+  (l/monitor object-or-fn (clj->js settings)))
+
+(defn folder
+  "Example: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/stories/Folder.stories.tsx#L71
+
+  Key is the folder name, value is the folder value...
+
+  settings: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87"
+  [schema settings]
+  (l/folder (clj->js schema)
+            (clj->js settings)))
+
 ;; ## Configuration
 ;;
 ;; Customize the panel:
 ;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
 ;; for more options
 
-(defn atom->schema-fn
+(defn ^:no-doc atom->schema-fn
   "I guess this is good if we have an atom and options. We also could just have a
   schema... but then how are they going to read the state back out? You need
   SOME way to deal with the handlers. I guess we can say, look, if you are using
@@ -61,7 +90,7 @@
      (js-obj)
      @!state)))
 
-(defn opts->argv
+(defn ^:no-doc opts->argv
   [{:keys [folder-name state options store folder-settings]}]
   (let [schema        (atom->schema-fn state options)
         hook-settings (when store #js {:store store})]
@@ -134,39 +163,6 @@
      [:> LevaPanel (assoc opts :store store)]
      (into [:> LevaStoreProvider {:store store}] children)]))
 
-;; ## DEMO
-
-(defn Cake
-  "Example for testing stores"
-  [!state]
-  (let [store (useCreateStore)]
-    [:div {:style {:display "grid"
-                   :width 300
-                   :gridRowGap 10
-                   :padding 10
-                   :background "#fff"}}
-     [:> LevaPanel {:store store
-                    :fill true
-                    :drag false}]
-     [:> LevaStoreProvider {:store store}
-      [Panel {:state !state}]]]))
-
-;; <div
-;; style={{
-;;         display: 'grid',
-;;         width: 300,
-;;         gridRowGap: 10,
-;;         padding: 10,
-;;         background: '#fff',
-;;         }}>
-;; <LevaPanel store={store1} fill flat titleBar={false} />
-;; <LevaPanel store={store2} fill flat titleBar={false} />
-;; <LevaStoreProvider store={store1}>
-;; <MyComponent />
-;; </LevaStoreProvider>
-;; </div>
-
-
 ;; TODO document that we CAN actually use custom stores and contexts and pin a
 ;; panel to a specific page element, once I figure out how to do that for
 ;; jsxgraph and mathbox we'll be SOLID. Here is the demo of custom stores etc:
@@ -178,3 +174,5 @@
 ;;
 ;; For plugins, here is an example:
 ;; https://github.com/pmndrs/leva/tree/main/packages/plugin-plot
+;;
+;; TODO maybe add links to the sandboxes in the notebook?

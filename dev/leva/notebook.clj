@@ -103,6 +103,12 @@
 ;;
 ;; ## TODO NON-reactive atoms work too
 ;;
+;; ## TODO use cursors to control only some sub-piece of the state atom
+;;
+;; ## TODO global config, titleBar etc
+;;
+;; ## TODO subpanel
+;;
 ;; ## Folders
 
 #_[leva/Panel
