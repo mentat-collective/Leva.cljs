@@ -100,18 +100,36 @@
        hook-settings]
       [schema hook-settings])))
 
-(defn Panel*
-  "We take `:state` and `:options`.
+;; ## Components
 
-  Also
+(defn GlobalConfig
+  "Configures the global Leva store.
 
-  `:folder-name`
-  `:folder-settings` https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87
+  https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/Leva.tsx
 
-  `:store`
-  `:hook-deps`
+  Takes all of these options except for \"store\":
+  https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13
 
-  TODO what good is hook deps? Why take that?"
+  PRovide children if you like for organization."
+  [opts & children]
+  (into [:<> [:> Leva opts]] children))
+
+(defn SubPanel
+  "Use this to create a subpanel. Children DO pick up on these settings.
+
+  TODO document that we CAN actually use custom stores and contexts and pin a
+  panel to a specific page element, once I figure out how to do that for
+  jsxgraph and mathbox we'll be SOLID. Here is the demo of custom stores etc:
+  https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-advanced-panels?file=/src/App.jsx:0-26
+  "
+  [opts & children]
+  (let [store (useCreateStore)]
+    [:<>
+     [:> LevaPanel (assoc opts :store store)]
+     (into [:> LevaStoreProvider {:store store}] children)]))
+
+(defn ^:no-doc Panel*
+  "Function component that backs [[Panel]]."
   [opts]
   (when-not (:state opts)
     (throw
@@ -119,6 +137,7 @@
       (str "Error: we currently require a :state opt."))))
 
   (let [!state  (:state opts)
+        ks      (keys (.-state !state))
         opts    (update opts :store #(or % (useStoreContext)))
         ;; NOTE that if we want to add a hook deps array here, we can conj it
         ;; onto the end of the vector returned by `opts->argv`. In the current
@@ -131,7 +150,9 @@
          (let [tracker
                (reagent/track!
                 (fn mount []
-                  (set (clj->js @!state))))]
+                  (set
+                   (clj->js
+                    (select-keys @!state ks)))))]
            (fn unmount []
              (reagent/dispose! tracker)))
          js/undefined)))
@@ -142,32 +163,22 @@
 ;; - global store
 ;; - standalone store, anonymous
 ;; -
-(defn Panel [opts]
+(defn Panel
+  "We take `:state` and `:options`.
+
+  Also
+
+  `:folder-name`
+  `:folder-settings` https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87
+
+  `:store`
+  `:hook-deps`
+
+  TODO what good is hook deps? Why take that?"
+  [opts]
   [:f> Panel* opts])
 
-(defn GlobalConfig
-  "Configures the global Leva store.
 
-  https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/Leva.tsx
-
-  Takes all of these options except for \"store\":
-  https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13"
-  [opts & children]
-  (into [:<> [:> Leva opts]] children))
-
-(defn SubPanel
-  "Use this to create a subpanel. Children DO pick up on these settings."
-  [opts & children]
-  (let [store (useCreateStore)]
-    [:<>
-     [:> LevaPanel (assoc opts :store store)]
-     (into [:> LevaStoreProvider {:store store}] children)]))
-
-;; TODO document that we CAN actually use custom stores and contexts and pin a
-;; panel to a specific page element, once I figure out how to do that for
-;; jsxgraph and mathbox we'll be SOLID. Here is the demo of custom stores etc:
-;; https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-advanced-panels?file=/src/App.jsx:0-26
-;;
 ;; There are more demos that live here
 ;; https://github.com/pmndrs/leva/tree/main/demo/src/sandboxes, and we can
 ;; access them with the same URL.

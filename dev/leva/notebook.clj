@@ -81,23 +81,21 @@
       :on-change
       (fn [target]
         (let [v (.. target -target -value)]
-          (swap! !state2 assoc :cake (js/parseInt v))))}]
-    [:pre (str @!state2)]
-
-    [:div {:style {:display "grid"
-                   :width 300
-                   :gridRowGap 10
-                   :padding 10
-                   :background "#fff"}}
-     [:pre "cake"]
-     ;; note that drag etc are titlebar options!
-     [leva/SubPanel {:fill true :flat true :titleBar false}
-      [leva/Panel {:state !state3}]]
-     [:pre (str @!state3)]
-     ]
-    ]))
+          (swap! !state2 assoc :cake (js/parseInt v))))}]]))
 
 @!state1
+
+;; And an inline one:
+
+(show-sci
+ (reagent/with-let [!state3 (reagent/atom {:face 12})]
+   [:<>
+    [leva/SubPanel {:fill true :flat false :titleBar {:drag false}}
+     [leva/Panel {:state !state3}]]
+    [:pre (str @!state3)]]))
+
+
+
 
 ;; ## Guides
 ;;
@@ -108,6 +106,11 @@
 ;; ## TODO global config, titleBar etc
 ;;
 ;; ## TODO subpanel
+;;
+;; ## TODO controlling order
+
+;; https://github.com/pmndrs/leva/pull/394
+
 ;;
 ;; ## Folders
 
