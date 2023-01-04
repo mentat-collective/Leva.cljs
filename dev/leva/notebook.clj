@@ -89,12 +89,12 @@
 ;; And an inline one:
 
 (show-sci
- (reagent/with-let [!state3 (reagent/atom {:face 12})]
+ (reagent/with-let [!state (reagent/atom {:face 12})]
    [:<>
     [leva/SubPanel {:fill true
                     :titleBar {:drag false}}
-     [leva/Panel {:state !state3}]]
-    [:pre (str @!state3)]]))
+     [leva/Panel {:state !state}]]
+    [:pre (str @!state)]]))
 
 ;; ## Guides
 ;;
