@@ -36,96 +36,120 @@
 ;;
 ;; ## In Progress Demos
 ;;
+;;
+;; ### Config
+
+(show-sci
+ [leva/GlobalConfig
+  {:titleBar
+   {:drag false
+    :position {:x 0 :y 30}}}])
+
+;; ### Sync with Server
+;;
 ;; Note the Leva panel in the top right. The state is bi-directionally bound to
 ;; TWO atoms, one of which syncs.
 
 ^{::clerk/sync true}
-(def !state1
+(def !synced
   (atom
-   {:number 10 :string "face"}))
+   {:number 10
+    :string "Hi!"}))
 
-;;
+;; Then add the panel and see it on the right. `leva/Panel` sends things to the
+;; global panel, and they accumulate.
+
+(show-sci
+ [:<>
+  [leva/Panel
+   {:folder-name "Client / Server Sync"
+    :state leva.notebook/!synced}]])
+
 ;; Try changing the values in the panel and hit `return` to update, or (for
 ;; numeric values) drag the slider on the left side of the input box. Hold down
 ;; `option/alt` to drag with small steps or `shift` to drag with big steps.
+;;
+;; Note that the server side state changes:
 
-^{:nextjournal.clerk/visibility {:code :fold}}
+@!synced
+
+;; ### Bidirectional syncing
+;;
+;; Now let's change the atom on the client side. Note the panel can drag the
+;; slider etc. They are tied!
+
+(show-sci
+ [:<>
+  [:input
+   {:type :range :min 0 :max 10 :step 1
+    :value (:number @leva.notebook/!synced)
+    :on-change
+    (fn [target]
+      (let [v (.. target -target -value)]
+        (swap! leva.notebook/!synced assoc :number (js/parseInt v))))}]
+  [:pre (str @leva.notebook/!synced)]])
+
+;; ## Stacking Global Options
+
 (show-sci
  (reagent/with-let
-   [!state2 (reagent/atom {:cake 12
-                           :point {:x 10 :y 12}
-                           :point2 {:x 10 :y 12 :z 12}
-                           :point3 {:r 10 :g 12 :cake 12}
-                           :color {:r 10 :g 12 :b 12}
-                           :color2 [1 2]})
-    !state3 (reagent/atom {:face 12})]
+   [!local (reagent/atom
+            {:point {:x 10 :y 12}})]
    [:<>
-    ;; This is the global config mode. You can send your panels in as children if you want for organization, but it doesn't matter.
-    [leva/GlobalConfig {:titleBar
-                        {:drag false
-                         :position {:x 0 :y 30}}}
-     [leva/Panel
-      {:folder-name "state 1"
-       :state leva.notebook/!state1}]]
-    [:input
-     {:type :range :min 0 :max 10 :step 1
-      :value (:number @leva.notebook/!state1)
-      :on-change
-      (fn [target]
-        (let [v (.. target -target -value)]
-          (swap! leva.notebook/!state1 assoc :number (js/parseInt v))))}]
-    [:pre (str @leva.notebook/!state1)]
-
     [leva/Panel
-     {:folder-name "state 2"
-      :state !state2
-      :schema
-      {:color2 nil
-       :donkey
-       (leva/folder
-        {:jabronie
-         (leva/folder
-          {:press
-           (leva/button (fn []
-                          (js/alert  (pr-str @!state2))))})}
-        {})}}]
-    [:input
-     {:type :range :min 0 :max 10 :step 1
-      :value (:cake @!state2)
-      :on-change
-      (fn [target]
-        (let [v (.. target -target -value)]
-          (swap! !state2 assoc :cake (js/parseInt v))))}]
-    [:pre (str @!state2)]]))
+     {:folder-name "Local State"
+      :state !local}]
+    [:pre (str @!local)]]))
 
-@!state1
+;; ### SubPanel
 
-;; And an inline one:
+;; make an inline panel. This does NOT use a global store. You should set `:fill
+;; true` to get it to fill its inline.
 
 (show-sci
- (reagent/with-let [!state (reagent/atom {:face 12})]
+ (reagent/with-let
+   [!state (reagent/atom {:face 12})]
    [:<>
     [leva/SubPanel {:fill true
-                    :titleBar {:drag false}}
+                    :titleBar
+                    {:drag false}}
      [leva/Panel {:state !state}]]
     [:pre (str @!state)]]))
 
-;; ## Guides
+;; ### Schema vs State
 ;;
-;; ## TODO NON-reactive atoms work too
+;; You can get more control by passing in a schema...
+
+;; ### No atoms
 ;;
-;; ## TODO use cursors to control only some sub-piece of the state atom
+;; ### Input Types
+
+;; type SchemaItem =
+;; | InputWithSettings<number, NumberSettings>
+;; | InputWithSettings<boolean>
+;; | InputWithSettings<string>
+;; | IntervalInput
+;; | ColorVectorInput
+;; | Vector2dInput
+;; | Vector3dInput
+;; | ImageInput
+;; | SelectInput
+;; | BooleanInput
+;; | StringInput
+;; | CustomInput<unknown>
+
+;; ### TODO NON-reactive atoms work too
 ;;
-;; ## TODO global config, titleBar etc
+;; ### TODO use cursors to control only some sub-piece of the state atom
 ;;
-;; ## TODO subpanel
-;;
-;; ## TODO controlling order
+;; ### TODO controlling order
 
 ;; https://github.com/pmndrs/leva/pull/394
 
 ;;
 ;; ## Folders
+;;
+;; note the settings
 
 #_[leva/Panel
    {:folder-name "state 1"
