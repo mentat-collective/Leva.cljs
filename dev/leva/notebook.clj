@@ -42,7 +42,7 @@
 (show-sci
  [leva/GlobalConfig
   {:titleBar
-   {:drag false
+   {:drag true
     :position {:x 0 :y 30}}}])
 
 ;; ### Sync with Server
@@ -50,20 +50,23 @@
 ;; Note the Leva panel in the top right. The state is bi-directionally bound to
 ;; TWO atoms, one of which syncs.
 
-^{::clerk/sync true}
-(def !synced
-  (atom
-   {:number 10
-    :string "Hi!"}))
 
-;; Then add the panel and see it on the right. `leva/Panel` sends things to the
+
+;; Then add the panel and see it on the right. `leva/Controls` sends things to the
 ;; global panel, and they accumulate.
 
 (show-sci
+ (def !synced
+   (reagent/atom
+    {:number 10
+     :cake {:r 10 :g 12}
+     :string "Hi!"}))
+
  [:<>
-  [leva/Panel
+  [leva/Controls
    {:folder-name "Client / Server Sync"
-    :state leva.notebook/!synced}]])
+    :atom !synced
+    :schema {:donkey {:x 10 :b 100}}}]])
 
 ;; Try changing the values in the panel and hit `return` to update, or (for
 ;; numeric values) drag the slider on the left side of the input box. Hold down
@@ -71,7 +74,7 @@
 ;;
 ;; Note that the server side state changes:
 
-@!synced
+#_@!synced
 
 ;; ### Bidirectional syncing
 ;;
@@ -82,12 +85,12 @@
  [:<>
   [:input
    {:type :range :min 0 :max 10 :step 1
-    :value (:number @leva.notebook/!synced)
+    :value (:number @!synced)
     :on-change
     (fn [target]
       (let [v (.. target -target -value)]
-        (swap! leva.notebook/!synced assoc :number (js/parseInt v))))}]
-  [:pre (str @leva.notebook/!synced)]])
+        (swap! !synced assoc :number (js/parseInt v))))}]
+  [:pre (str @!synced)]])
 
 ;; ## Stacking Global Options
 
@@ -96,9 +99,9 @@
    [!local (reagent/atom
             {:point {:x 10 :y 12}})]
    [:<>
-    [leva/Panel
+    [leva/Controls
      {:folder-name "Local State"
-      :state !local}]
+      :atom !local}]
     [:pre (str @!local)]]))
 
 ;; ### SubPanel
@@ -113,16 +116,45 @@
     [leva/SubPanel {:fill true
                     :titleBar
                     {:drag false}}
-     [leva/Panel {:state !state}]]
+     [leva/Controls {:atom !state}]]
     [:pre (str @!state)]]))
 
 ;; ### Schema vs State
+
+
+;; TODO for schema. IF we have an atom... then synchronize!
+;; - if we have a schema... do NOT!
+;; - if we have a schema, can we ALSO allow it to feed updates out? Can we do a schema AND then tie parts of it to an atom?
+
+;; TODO scan for more goodies from storybook
+;; https://leva.pmnd.rs/?path=/story/inputs-string--simple
+
+;; TODO document specific options, like `:render` boolean fn,
+;;
+;; document other inputs https://github.com/pmndrs/leva/blob/main/docs/inputs.md
+;;
+;; folders? https://github.com/pmndrs/leva/blob/main/docs/getting-started.md#nested-folders
+
+
+;; ## Numbers
+;;
+;; Increase / decrease numbers with arrow keys, with alt (±0.1) and shift (±10)
+;; modifiers support.
+
 ;;
 ;; You can get more control by passing in a schema...
 
 ;; ### No atoms
 ;;
 ;; ### Input Types
+
+;; Customize the panel:
+;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
+;; for more options
+
+;; TODO maybe do leva-busy for fun. https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy?file=/src/App.tsx:3276-3281
+
+;; Here are all of the possible inputs: https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L130-L142
 
 ;; type SchemaItem =
 ;; | InputWithSettings<number, NumberSettings>
@@ -138,6 +170,73 @@
 ;; | StringInput
 ;; | CustomInput<unknown>
 
+;; OnChangeHandler = (value: any, path: string, context: OnChangeHandlerContext) => void
+
+;; InputOptions is a bunch of BS, but all we care about is onChange
+
+
+;; remaining types:
+;; | ImageInput
+;;  NOTE {:image <thing>} with settings mashed in
+
+;; | ColorVectorInput
+;; NOTE primitive form == map of specific kv pairs. CHECK FOR THESE EXACT ONES since if they don't match we fall back to vectors!!
+
+;; type ColorRgbaInput = { r: number; g: number; b: number; a?: number }
+;; type ColorHslaInput = { h: number; s: number; l: number; a?: number }
+;; type ColorHsvaInput = { h: number; s: number; v: number; a?: number }
+;; export type ColorVectorInput = ColorRgbaInput | ColorHslaInput | ColorHsvaInput
+
+;; TODO we need to handle non-primitive stuff coming in
+;; from onChange etc.
+
+;; NOTE :value, :onChange with other settings in there too
+;; | InputWithSettings<number, NumberSettings>
+;; | InputWithSettings<boolean>
+;; | InputWithSettings<string>
+;; | IntervalInput NOTE primitive form == [l r] with min max, either :value, :onChange
+;; TODO following ones are EITHER a map with 2/3 entries as value, OR a pair/triple.
+;; | Vector2dInput NOTE same, missing min max
+;; | Vector3dInput NOTE same as prev but with three
+
+
+;; | SelectInput ;; TODO ANYTHING with :options too. :value :onChange deal applies here.
+;; | DONE BooleanInput primitive onlyI
+;; | DONE StringInput since it's covered by the first thing above?
+;; | CustomInput<unknown>
+
+
+;; type SchemaItemWithOptions =
+;; | DONE number
+;; | DONE boolean
+;; | DONE string
+;; | (SchemaItem & InputOptions)
+;; | DONE (SpecialInput & GenericSchemaItemOptions)
+;; | DONE FolderInput<unknown>
+
+;; TODO ONLY MAPS ALLOWED, but fall through to here only after checking on others like image etc.
+
+;; NOTE: if it's a special input... we pass it along, no changes.
+;;
+;; all of the other LevaInputs can synchronize, no problem.
+;;
+;; What about the custom inputs? Maybe we say that for
+;; anything beyond the basics, you have to manually
+;; deal with those yourself... but maybe not, maybe if
+;; it has a value, then onChange can synchronize.
+;;
+;; NOTE: I think no state is fine if you have onChange
+;; handlers for everyone. But if you are missing one
+;; AND don't provide an atom you get an error.
+;;
+;; EITHERRRRR you set value and onChange... or you let
+;; the atom handle those. If you have anyone with no
+;; value and onChange AND AN ATOM you fail.
+;;
+;; NOTE are there default values for these? can I
+;; skip "value", like if you don't want to pull it from
+;; the atom?
+
 ;; ### TODO NON-reactive atoms work too
 ;;
 ;; ### TODO use cursors to control only some sub-piece of the state atom
@@ -151,10 +250,10 @@
 ;;
 ;; note the settings
 
-#_[leva/Panel
+#_[leva/Controls
    {:folder-name "state 1"
     :folder-settings {:collapsed true}
-    :state leva.notebook/!state1}]
+    :atom leva.notebook/!state1}]
 
 ;; ## Thanks and Support
 

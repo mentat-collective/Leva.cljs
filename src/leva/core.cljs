@@ -1,34 +1,8 @@
 (ns leva.core
-  (:require [clojure.set]
-            [clojure.string :as cs]
-            ["leva" :as l
-             :refer
-             [useControls useCreateStore useStoreContext Leva LevaPanel
-              LevaStoreProvider]]
+  "Interface for Leva."
+  (:require ["leva" :as l]
             ["react" :as react]
-            [goog.object :as o]
-            [reagent.core :as reagent]
-            [reagent.ratom :as ratom]))
-
-
-;; TODO for schema. IF we have an atom... then synchronize!
-;; - if we have a schema... do NOT!
-;; - if we have a schema, can we ALSO allow it to feed updates out? Can we do a schema AND then tie parts of it to an atom?
-
-;; TODO scan for more goodies from storybook
-;; https://leva.pmnd.rs/?path=/story/inputs-string--simple
-
-;; TODO document specific options, like `:render` boolean fn,
-;;
-;; document other inputs https://github.com/pmndrs/leva/blob/main/docs/inputs.md
-;;
-;; folders? https://github.com/pmndrs/leva/blob/main/docs/getting-started.md#nested-folders
-
-
-;; ## Numbers
-;;
-;; Increase / decrease numbers with arrow keys, with alt (±0.1) and shift (±10)
-;; modifiers support.
+            [goog.object :as o]))
 
 ;; ## Types and Schema Predicates
 
@@ -53,25 +27,24 @@
   (contains? SpecialInputTypes (:type entry)))
 
 (defn custom-input?
-  "JS objects since you use their constructor."
+  "Returns true if we have a custom input, false otherwise. JS objects since you
+  use their constructor.
+
+  NOTE that these will be JS objects since they're built with the constructor
+  over there."
   [entry]
-  ;; TODO make sure this works on a js object.
-  (contains? entry "__specialInput"))
-
-(defn rgb? [m] (every? m [:r :g :b]))
-(defn hsl? [m] (every? m [:h :s :l]))
-(defn hsv? [m] (every? m [:h :s :v]))
-
-(def color? (some-fn rgb? hsl? hsv?))
-
-(defn image? [m] (contains? m :image))
+  (boolean
+   (o/get entry "__specialInput")))
 
 ;; ## Input Constructors
 
-(defn button
-  "Relevant opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L47-L53
+;; TODO kit replace these "settings" with a generic opts map and update in
+;; defaults with settings.
+;;
+;; TODO test that z-order etc all work with these.
 
-  TODO what about render, z-order etc? Same for all of these below."
+(defn button
+  "Relevant opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L47-L53"
   ([on-click]
    (button on-click {}))
   ([on-click settings]
@@ -103,7 +76,7 @@
 (defn folder
   "Example: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/stories/Folder.stories.tsx#L71
 
-  Key is the folder name, value is the folder value...
+  Key is the folder name, value is this
 
   settings: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87"
   ([schema]
@@ -114,239 +87,139 @@
     :settings settings}))
 
 ;; ## Configuration
-;;
-;; Customize the panel:
-;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
-;; for more options
 
-;; TODO we are currently walking the atom and building a schema. What we WANT TO
-;; DO IS THIS:
+(defn on-change-fn
+  "Given an atom, returns a function from key->onChange."
+  [!state]
+  (fn k->on-change [key]
+    (fn on-change [value _ _]
+      (let [value (if (primitive? value)
+                    value
+                    (js->clj value :keywordize-keys true))]
+        (when (not= value (get (.-state !state) key ::not-found))
+          (swap! !state assoc key value))))))
 
-;; - walk the schema, not the atom
+(defn ^:no-doc controlled->js
+  "This is way simpler.
 
-;; - For updatable inputs, you can EITHER PROVIDE `value` and `onChange`, or it
-;;   has to be present in the atom.
-;;
-;; - for things like buttons etc, we don't care.
-;;
-;; - Keep a set of keys that we've seen... finally, add to the schema the
-;;   entries in the atom that don't have a schema entry, they need to count too.
-;;   And if you want to keep some OUT, make a cursor.
-;;
-;; If you give `:value` and `:onChange` AND the atom, we can log a warning that
-;; we are ignoring the atom.
-;;
-;; TODO maybe do leva-busy for fun. https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy?file=/src/App.tsx:3276-3281
+  If v is a map, it gets merged into the schema. Otherwise
+  it's added as `:value`... and we give a good warning."
+  [k v schema k->on-change]
+  (let [m (-> (if (map? v)
+                (merge schema v)
+                (assoc schema :value v))
+              (assoc :onChange (k->on-change k)))]
+    (when-let [bumped (keys (select-keys schema (keys m)))]
+      (js/console.warn
+       "Schema entry for " k " matches an entry in the `:atom`. "
+       "The following keys are being evicted: "
+       bumped))
+    (clj->js m)))
 
-;; Here are all of the possible inputs: https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L130-L142
+(defn ^:no-doc uncontrolled->js
+  "Uncontrolled is REQUIRED to have the goods."
+  [k schema]
+  (let [m (if (contains? schema :onChange)
+            schema
+            (do (js/console.warn
+                 (str "no onChange for uncontrolled "
+                      k "! Swapping in a no-op `:onChange`."))
+                (assoc schema :onChange (fn [_]))))]
+    (clj->js m)))
 
-(defn qualifies?
-  "Given some sequence of keys, returns true if EITHER the state has all of the
-  entries or the schema does. Otherwise we fall through."
-  [ks]
-  (fn [key entry state]
-    (if-let [v (get state key)]
-      (and (map? v) (every? #(contains? v %) ks))
-      (every? #(contains? entry %) ks))))
-
-(defn atom-or-schema
-  "This function ASSUMES that if there is a "[value-keys]
-  (fn [key entry !state initial-state]
-    (if (contains? initial-state key)
-      (if (or (some #(contains? entry %) value-keys)
-              (:onChange entry))
-        (js/console.error
-         (str "State entry present for " key
-              "; do NOT provide any of " (cs/join ", " value-keys)
-              " or :onChange."))
-        (let [initial-value (get initial-state key)
-              entry (if (= value-keys [:value])
-                      (assoc entry :value initial-value)
-                      (merge entry initial-value))]
-          (doto (clj->js entry)
-            (o/set "onChange"
-                   (fn [value _ _]
-                     (let [value (if (primitive? value)
-                                   value
-                                   (js->clj value :keywordize-keys true))]
-                       (when (not= value (get (.-state !state) key ::not-found))
-                         (swap! !state assoc key value))))))))
-      (if (and (every? #(contains? entry %) value-keys)
-               (:onChange entry))
-        (clj->js entry)
-        (js/console.error
-         (str "There is no state entry for " key
-              "; you must supply all of " (cs/join ", " value-keys)
-              " and :onChange."))))))
-
-(defn ^:no-doc remaining-atom-entries
-  [acc m !state]
-  (reduce-kv
-   (fn [acc k v]
-     (letfn [(on-change [value _ _]
-               (let [value (if (primitive? value)
-                             value
-                             (js->clj value :keywordize-keys true))]
-                 (when (not= value (get (.-state !state) k ::not-found))
-                   (swap! !state assoc k value))))]
-       (doto acc
-         (o/set
-          (name k)
-          (if (map? v)
-            (doto (clj->js v)
-              (o/set "onChange" on-change))
-            #js {"value" (if (primitive? v) v (clj->js v)) "onChange" on-change})))))
-   acc
-   m))
+(defn ^:no-doc set-controlled-entries!
+  "Set all remaining schemaless entries from the initial state."
+  [acc m k->on-change]
+  (letfn [(process [acc k v]
+            (doto acc
+              (o/set
+               (name k)
+               (controlled->js k v {} k->on-change))))]
+    (reduce-kv process acc m)))
 
 (defn ^:no-doc build-schema
-  "This has to work like https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/store.ts#L261-L296"
-  [schema !state]
-  (fn []
-    (let [state (.-state !state)
-          seen  (atom #{})]
-      (letfn [(insert! [acc k v]
-                (swap! seen conj k)
-                (doto acc (o/set (name k) v)))
-              (rec [schema]
-                (reduce-kv
-                 (fn [acc key entry]
-                   (let [entry (or entry {})]
-                     (cond (= "" (name key))
-                           (do (js/console.error
-                                (str "Keys can not be empty, if you want to hide a label use whitespace."))
-                               acc)
+  "Given a schema and an initial state, plus a way to make on onChange that
+  propagates updates, builds a JS schema."
+  [schema state k->on-change]
+  (let [seen (atom #{})]
+    (letfn [(ignore [k v message]
+              (swap! seen conj k)
+              (js/console.warn (str "ignoring " k ", " v " in  atom; " message)))
 
-                           (@seen key)
-                           (do (js/console.error
-                                (str "Duplicate key: " key))
-                               acc)
+            (insert! [acc k v]
+              (swap! seen conj k)
+              (doto acc (o/set (name k) v)))
+            (rec [schema]
+              (reduce-kv
+               (fn [acc k entry]
+                 (let [entry (or entry {})]
+                   (cond
+                     (= "" (name k))
+                     (do (js/console.error
+                          (str "Keys can not be empty, if you want to hide a label use whitespace. Ignoring entry: "
+                               k ", " entry))
+                         acc)
 
-                           (primitive? entry)
-                           (do (js/console.error
-                                (str "Primitives not allowed in schema definition. Use an entry in the atom."))
-                               acc)
+                     (@seen k)
+                     (do (js/console.error
+                          (str "Duplicate key: " k ", ignoring entry: " entry))
+                         acc)
 
-                           (vector? entry)
-                           (do (js/console.error
-                                (str "Vectors not allowed in schema definition. Use an entry in the atom."))
-                               acc)
+                     (primitive? entry)
+                     (do (js/console.error
+                          (str "Primitives not allowed in schema definition. Use an entry in the atom: "
+                               k ", " entry))
+                         acc)
 
-                           (custom-input? entry)
-                           (insert! acc key entry)
+                     (vector? entry)
+                     (do (js/console.error
+                          (str "Vectors not allowed in schema definition. Use an entry in the atom: "
+                               k ", " entry))
+                         acc)
 
-                           (folder? entry)
-                           (insert! acc key (l/folder
-                                             ;; TODO deal with a warning and null on a recursive call.
-                                             (rec (:schema entry))
-                                             (clj->js
-                                              (:settings entry))))
+                     (custom-input? entry)
+                     (do (when-let [v (get state k)]
+                           (ignore k v "schema has custom input."))
+                         (insert! acc k entry))
 
-                           ;; The rest of the special inputs don't synchronize state, so we don't need to do any checking against the atom.
-                           (special-input? entry)
-                           (insert! acc key (clj->js entry))
+                     (folder? entry)
+                     (do (when-let [v (get state k)]
+                           (ignore k v "schema registered as folder."))
+                         (insert! acc k (l/folder
+                                         (rec (:schema entry))
+                                         (clj->js
+                                          (:settings entry)))))
 
-                           ;; TODO in this case we want to replace the `nil` value in the `image` entry with js/undefined.
-                           ((qualifies? [:image]) key entry state)
-                           (insert! acc key ((atom-or-schema [:image]) key entry !state state))
+                     (special-input? entry)
+                     (do (when-let [v (get state k)]
+                           (ignore k v "schema registered as special input."))
+                         (insert! acc k (clj->js entry)))
 
-                           ((qualifies? [:r :g :b]) key entry state)
-                           (insert! acc key ((atom-or-schema [:r :g :b]) key entry !state state))
+                     (map? entry)
+                     (if-let [v (get state k)]
+                       (insert! acc k (controlled->js k entry v k->on-change))
+                       (insert! acc k (uncontrolled->js k entry)))
 
-                           ((qualifies? [:h :s :l]) key entry state)
-                           (insert! acc key ((atom-or-schema [:h :s :l]) key entry !state state))
-
-                           ((qualifies? [:h :s :v]) key entry state)
-                           (insert! acc key ((atom-or-schema [:h :s :v]) key entry !state state))
-
-                           (map? entry)
-                           (insert! acc key ((atom-or-schema [:value]) key entry !state state))
-
-
-                           ;; NOTE that this is what comes in
-                           ;; OnChangeHandler = (value: any, path: string, context: OnChangeHandlerContext) => void
-
-                           ;; InputOptions is a bunch of BS, but all we care about is onChange
-
-
-                           ;; remaining types:
-                           ;; | ImageInput
-                           ;;  NOTE {:image <thing>} with settings mashed in
-
-                           ;; | ColorVectorInput
-                           ;; NOTE primitive form == map of specific kv pairs. CHECK FOR THESE EXACT ONES since if they don't match we fall back to vectors!!
-
-                           ;; type ColorRgbaInput = { r: number; g: number; b: number; a?: number }
-                           ;; type ColorHslaInput = { h: number; s: number; l: number; a?: number }
-                           ;; type ColorHsvaInput = { h: number; s: number; v: number; a?: number }
-                           ;; export type ColorVectorInput = ColorRgbaInput | ColorHslaInput | ColorHsvaInput
-
-                           ;; TODO we need to handle non-primitive stuff coming in
-                           ;; from onChange etc.
-
-                           ;; NOTE :value, :onChange with other settings in there too
-                           ;; | InputWithSettings<number, NumberSettings>
-                           ;; | InputWithSettings<boolean>
-                           ;; | InputWithSettings<string>
-                           ;; | IntervalInput NOTE primitive form == [l r] with min max, either :value, :onChange
-                           ;; TODO following ones are EITHER a map with 2/3 entries as value, OR a pair/triple.
-                           ;; | Vector2dInput NOTE same, missing min max
-                           ;; | Vector3dInput NOTE same as prev but with three
-
-
-                           ;; | SelectInput ;; TODO ANYTHING with :options too. :value :onChange deal applies here.
-                           ;; | DONE BooleanInput primitive onlyI
-                           ;; | DONE StringInput since it's covered by the first thing above?
-                           ;; | CustomInput<unknown>
-
-
-                           ;; type SchemaItemWithOptions =
-                           ;; | DONE number
-                           ;; | DONE boolean
-                           ;; | DONE string
-                           ;; | (SchemaItem & InputOptions)
-                           ;; | DONE (SpecialInput & GenericSchemaItemOptions)
-                           ;; | DONE FolderInput<unknown>
-
-                           ;; TODO ONLY MAPS ALLOWED, but fall through to here only after checking on others like image etc.
-
-                           ;; NOTE: if it's a special input... we pass it along, no changes.
-                           ;;
-                           ;; all of the other LevaInputs can synchronize, no problem.
-                           ;;
-                           ;; What about the custom inputs? Maybe we say that for
-                           ;; anything beyond the basics, you have to manually
-                           ;; deal with those yourself... but maybe not, maybe if
-                           ;; it has a value, then onChange can synchronize.
-                           ;;
-                           ;; NOTE: I think no state is fine if you have onChange
-                           ;; handlers for everyone. But if you are missing one
-                           ;; AND don't provide an atom you get an error.
-                           ;;
-                           ;; EITHERRRRR you set value and onChange... or you let
-                           ;; the atom handle those. If you have anyone with no
-                           ;; value and onChange AND AN ATOM you fail.
-                           ;;
-                           ;; NOTE are there default values for these? can I
-                           ;; skip "value", like if you don't want to pull it from
-                           ;; the atom?
-
-                           :else
-                           (do (js/console.error
-                                (str "Unknown type " key ", " (pr-str entry)))
-                               acc))))
-                 (js-obj)
-                 schema))]
-        (let [processed (rec schema)
-              remaining (select-keys state (clojure.set/difference
-                                            (set (keys state))
-                                            @seen))]
-          ;; now add in the keys from the atom that haven't been seen yet.
-          (remaining-atom-entries processed remaining !state))))))
+                     :else
+                     (do (js/console.error
+                          (str "Unknown type " k ", " (pr-str entry) "; ignoring."))
+                         acc))))
+               (js-obj)
+               schema))]
+      (let [processed (rec schema)
+            remaining (apply dissoc state @seen)]
+        ;; now add in the keys from the atom that haven't been seen yet.
+        (set-controlled-entries! processed remaining k->on-change)))))
 
 (defn ^:no-doc opts->argv
-  [{:keys [folder-name schema state store folder-settings]}]
-  (let [schema        (build-schema schema state)
+  [{:keys [folder-name schema atom store folder-settings]}]
+  (let [k->on-change  (on-change-fn atom)
+        initial-state (.-state atom)
+        ;; NOTE This function wrapper is required for `set` below to work. If
+        ;; you don't want to synchronize state back from the atom, do this. See
+        ;; below for more detail.
+        schema        (fn []
+                        (build-schema schema initial-state k->on-change))
         hook-settings (when store #js {:store store})]
     (if folder-name
       [folder-name schema
@@ -366,72 +239,56 @@
 
   PRovide children if you like for organization."
   [opts & children]
-  (into [:<> [:> Leva opts]] children))
+  (into [:<> [:> l/Leva opts]] children))
 
 (defn SubPanel
-  "Use this to create a subpanel. Children DO pick up on these settings.
-
-  TODO document that we CAN actually use custom stores and contexts and pin a
-  panel to a specific page element, once I figure out how to do that for
-  jsxgraph and mathbox we'll be SOLID. Here is the demo of custom stores etc:
-  https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-advanced-panels?file=/src/App.jsx:0-26
-  "
+  "Use this to create a subpanel. Children DO pick up on these settings."
   [opts & children]
-  (let [store (useCreateStore)]
+  (let [store (l/useCreateStore)]
     [:<>
-     [:> LevaPanel (assoc opts :store store)]
-     (into [:> LevaStoreProvider {:store store}] children)]))
+     [:> l/LevaPanel (assoc opts :store store)]
+     (into [:> l/LevaStoreProvider {:store store}] children)]))
 
-(defn ^:no-doc Panel*
+(defn ^:no-doc Controls*
   "Function component that backs [[Panel]]."
   [opts]
-  (when-not (:state opts)
-    (throw
-     (js/Error.
-      (str "Error: we currently require a :state opt."))))
+  (let [[watch-id] (react/useState (str (random-uuid)))
+        !state     (:atom opts)
+        ks         (keys (.-state !state))
+        opts       (update opts :store #(or % (l/useStoreContext)))
 
-  (let [!state  (:state opts)
-        ks      (keys (.-state !state))
-        opts    (update opts :store #(or % (useStoreContext)))
         ;; NOTE that if we want to add a hook deps array here, we can conj it
         ;; onto the end of the vector returned by `opts->argv`. In the current
         ;; implementation, this hook is called on each re-render.
-        [_ set] (apply useControls (opts->argv opts))]
+        ;;
+        ;; NOTE if we don't apply the function wrapper above, the return value
+        ;; here is no longer a pair.
+        [_ set] (apply l/useControls (opts->argv opts))]
     (react/useEffect
      (fn mount []
-       ;; NOTE in docs that we only install if it's reactive.
-       (if (satisfies? ratom/IReactiveAtom !state)
-         (let [tracker
-               (reagent/track!
-                (fn []
-                  (set
-                   (clj->js
-                    (select-keys @!state ks)))))]
-           (fn unmount []
-             (reagent/dispose! tracker)))
-         js/undefined)))
+       (add-watch
+        !state
+        watch-id
+        (fn [_ _ _ new-state]
+          (set
+           (clj->js
+            (select-keys new-state ks)))))
+       (fn unmount []
+         (remove-watch !state watch-id))))
     nil))
 
-;; HUH! So the interface we want is either:
-;;
-;; - global store
-;; - standalone store, anonymous
-;; -
-(defn Panel
-  "We take `:state` and `:schema`.
+(defn Controls
+  "We take `:atom` and `:schema`.
 
   Also
 
   `:folder-name`
   `:folder-settings` https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87
-
-  `:store`
-  `:hook-deps`
+  `:store`...
 
   TODO what good is hook deps? Why take that?"
   [opts]
-  [:f> Panel* opts])
-
+  [:f> Controls* opts])
 
 ;; There are more demos that live here
 ;; https://github.com/pmndrs/leva/tree/main/demo/src/sandboxes, and we can
