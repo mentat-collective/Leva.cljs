@@ -52,7 +52,12 @@
 ^{:nextjournal.clerk/visibility {:code :fold}}
 (show-sci
  (reagent/with-let
-   [!state2 (reagent/atom {:cake 12})
+   [!state2 (reagent/atom {:cake 12
+                           :point {:x 10 :y 12}
+                           :point2 {:x 10 :y 12 :z 12}
+                           :point3 {:r 10 :g 12 :cake 12}
+                           :color {:r 10 :g 12 :b 12}
+                           :color2 [1 2]})
     !state3 (reagent/atom {:face 12})]
    [:<>
     ;; This is the global config mode. You can send your panels in as children if you want for organization, but it doesn't matter.
@@ -71,10 +76,19 @@
           (swap! leva.notebook/!state1 assoc :number (js/parseInt v))))}]
     [:pre (str @leva.notebook/!state1)]
 
-
     [leva/Panel
      {:folder-name "state 2"
-      :state !state2}]
+      :state !state2
+      :schema
+      {:color2 nil
+       :donkey
+       (leva/folder
+        {:jabronie
+         (leva/folder
+          {:press
+           (leva/button (fn []
+                          (js/alert  (pr-str @!state2))))})}
+        {})}}]
     [:input
      {:type :range :min 0 :max 10 :step 1
       :value (:cake @!state2)
