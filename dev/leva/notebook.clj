@@ -3,8 +3,7 @@
  :no-cache true
  :visibility :hide-ns}
 (ns leva.notebook
-  (:require [mentat.clerk-utils.show :refer [show-sci]]
-            [nextjournal.clerk :as clerk]))
+  (:require [mentat.clerk-utils.show :refer [show-sci]]))
 
 ;; # Leva.cljs
 ;;
