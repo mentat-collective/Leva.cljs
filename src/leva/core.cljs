@@ -11,33 +11,34 @@
             [leva.schema :as schema]
             [leva.types :as t]))
 
-;; TODO test that this CAN work if I want to test it out.
-;; NOTE make a note that there is no guarantee this will work well.
-#_["@leva-ui/plugin-plot" :as p]
+;; ## Special Input Constructors
 
-
-;; ## Input Constructors
-
-;; TODO kit replace these "settings" with a generic opts map and update in
-;; defaults with settings.
-;;
-;; TODO test that z-order etc all work with these.
+(def ^:no-doc button-defaults
+  {:disabled false})
 
 (defn button
-  "Relevant opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L47-L53"
+  "Returns a schema entry that defines a button, given a function `on-click` and a
+  map `opt` of options."
   ([on-click]
    (button on-click {}))
-  ([on-click settings]
-   (let [defaults {:disabled false}]
-     {:type (:button t/SpecialInputs)
-      :onClick on-click
-      :settings (merge defaults settings)})))
+  ([on-click opts]
+   ;; TODO note what is happening here, trying to get a more sane settings deal.
+   (let [settings (select-keys opts [:disabled])
+         settings (merge button-defaults settings)]
+     (-> {:type (:button t/SpecialInputs)
+          :onClick on-click
+          :settings settings}
+         (merge (dissoc opts :type :onClick :disabled :settings))))))
 
 (defn button-group
   "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L55-L64"
-  [opts]
-  {:type (:button-group t/SpecialInputs)
-   :opts opts})
+  ([opts]
+   {:type (:button-group t/SpecialInputs)
+    :opts opts})
+  ([label opts]
+   {:type (:button-group t/SpecialInputs)
+    :opts {:label label
+           :opts opts}}))
 
 (defn monitor
   "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L71-L77
@@ -45,7 +46,9 @@
   Tons of stuff with a monitor demo:
   https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy
 
-  The monitor is going to call a thunk for us that checks on something."
+  The monitor is going to call a thunk for us that checks on something.
+
+  settings can be graph or interval."
   ([object-or-fn]
    (monitor object-or-fn {}))
   ([object-or-fn settings]
@@ -89,11 +92,12 @@
      (into [:> l/LevaStoreProvider {:store store}] children)]))
 
 (defn ^:no-doc Controls*
-  "Function component that backs [[Panel]]."
+  "Function component that backs [[Panel]]. atom is optional now!"
   [opts]
   (let [[watch-id] (react/useState (str (random-uuid)))
         !state     (:atom opts)
-        ks         (keys (.-state !state))
+        initial    (if !state (.-state !state) {})
+        ks         (keys initial)
         opts       (update opts :store #(or % (l/useStoreContext)))
 
         ;; NOTE that if we want to add a hook deps array here, we can conj it
@@ -105,15 +109,17 @@
         [_ set] (apply l/useControls (schema/opts->argv opts))]
     (react/useEffect
      (fn mount []
-       (add-watch
-        !state
-        watch-id
-        (fn [_ _ _ new-state]
-          (set
-           (clj->js
-            (select-keys new-state ks)))))
-       (fn unmount []
-         (remove-watch !state watch-id))))
+       (if !state
+         (do (add-watch
+              !state
+              watch-id
+              (fn [_ _ _ new-state]
+                (set
+                 (clj->js
+                  (select-keys new-state ks)))))
+             (fn unmount []
+               (remove-watch !state watch-id)))
+         js/undefined)))
     nil))
 
 (defn Controls
@@ -121,11 +127,8 @@
 
   Also
 
-  `:folder-name`
-  `:folder-settings` https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87
-  `:store`...
-
-  TODO what good is hook deps? Why take that?"
+  `:folder {:name :settings}` https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87
+  `:store`..."
   [opts]
   [:f> Controls* opts])
 

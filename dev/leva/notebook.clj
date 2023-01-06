@@ -63,17 +63,15 @@
 
  [:<>
   [leva/Controls
-   {:folder-name "Client / Server Sync"
+   {:folder {:name "Client / Server Sync"}
     :atom !synced
-    :schema {:donkey {:x 10 :b 100}}}]])
+    :schema {:point {:a 10 :b 100}}}]])
 
 ;; Try changing the values in the panel and hit `return` to update, or (for
 ;; numeric values) drag the slider on the left side of the input box. Hold down
 ;; `option/alt` to drag with small steps or `shift` to drag with big steps.
 ;;
 ;; Note that the server side state changes:
-
-#_@!synced
 
 ;; ### Bidirectional syncing
 ;;
@@ -99,9 +97,30 @@
             {:point {:x 10 :y 12}})]
    [:<>
     [leva/Controls
-     {:folder-name "Local State"
+     {:folder {:name "Local State"}
       :atom !local}]
     [:pre (str @!local)]]))
+
+;; ## Special Inputs
+;;
+;; No atom necessary!
+(show-sci
+ [leva/Controls
+  {:folder {:name "Special Inputs"}
+   :schema
+   {"Sub Folder"
+    (leva/folder
+     {:button (leva/button js/alert)
+      :group  (leva/button-group
+               "Label"
+               {"1px" #(js/alert "1px")
+                "2px" #(js/alert "2px")})
+      :monitor (leva/monitor
+                (fn []
+                  (let [t (js/Date.now)]
+                    (Math/sin (/ t 300))))
+                {:graph true
+                 :interval 30})})}}])
 
 ;; ### SubPanel
 
@@ -250,9 +269,15 @@
 ;; note the settings
 
 #_[leva/Controls
-   {:folder-name "state 1"
-    :folder-settings {:collapsed true}
+   {:folder
+    {:name     "state 1"
+     :settings {:collapsed true}}
     :atom leva.notebook/!state1}]
+
+;; TODO test that this CAN work if I want to test it out.
+;; NOTE make a note that there is no guarantee this will work well.
+#_["@leva-ui/plugin-plot" :as p]
+
 
 ;; ## Thanks and Support
 
