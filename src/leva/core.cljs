@@ -1,40 +1,20 @@
 (ns leva.core
-  "Interface for Leva."
+  "Reagent components and utilities exposing
+  the [hooks](https://reactjs.org/docs/hooks-intro.html) declared by
+  the [Leva](https://github.com/pmndrs/leva) components GUI.
+
+  These components make it easy to synchronize state through Clojure's atom
+  interface instead of
+  [React hooks](https://reactjs.org/docs/hooks-intro.html) and callbacks."
   (:require ["leva" :as l]
             ["react" :as react]
-            [goog.object :as o]))
+            [leva.schema :as schema]
+            [leva.types :as t]))
 
-;; ## Types and Schema Predicates
+;; TODO test that this CAN work if I want to test it out.
+;; NOTE make a note that there is no guarantee this will work well.
+#_["@leva-ui/plugin-plot" :as p]
 
-(def FolderType
-  (.-type (l/folder #js {} #js {})))
-
-(def SpecialInputs
-  {:button       (.-type (l/button (fn []) #js {}))
-   :button-group (.-type (l/buttonGroup nil))
-   :monitor      (.-type (l/monitor (fn []) #js {}))})
-
-(def SpecialInputTypes
-  (into #{} (vals SpecialInputs)))
-
-(def primitive?
-  (some-fn number? boolean? string?))
-
-(defn folder? [entry]
-  (= FolderType (:type entry)))
-
-(defn special-input? [entry]
-  (contains? SpecialInputTypes (:type entry)))
-
-(defn custom-input?
-  "Returns true if we have a custom input, false otherwise. JS objects since you
-  use their constructor.
-
-  NOTE that these will be JS objects since they're built with the constructor
-  over there."
-  [entry]
-  (boolean
-   (o/get entry "__specialInput")))
 
 ;; ## Input Constructors
 
@@ -49,14 +29,14 @@
    (button on-click {}))
   ([on-click settings]
    (let [defaults {:disabled false}]
-     {:type (:button SpecialInputs)
+     {:type (:button t/SpecialInputs)
       :onClick on-click
       :settings (merge defaults settings)})))
 
 (defn button-group
   "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L55-L64"
   [opts]
-  {:type (:button-group SpecialInputs)
+  {:type (:button-group t/SpecialInputs)
    :opts opts})
 
 (defn monitor
@@ -69,7 +49,7 @@
   ([object-or-fn]
    (monitor object-or-fn {}))
   ([object-or-fn settings]
-   {:type (:monitor SpecialInputs)
+   {:type (:monitor t/SpecialInputs)
     :objectOrFn object-or-fn
     :settings settings}))
 
@@ -82,150 +62,9 @@
   ([schema]
    (folder schema {}))
   ([schema settings]
-   {:type FolderType
+   {:type t/FolderType
     :schema schema
     :settings settings}))
-
-;; ## Configuration
-
-(defn on-change-fn
-  "Given an atom, returns a function from key->onChange."
-  [!state]
-  (fn k->on-change [key]
-    (fn on-change [value _ _]
-      (let [value (if (primitive? value)
-                    value
-                    (js->clj value :keywordize-keys true))]
-        (when (not= value (get (.-state !state) key ::not-found))
-          (swap! !state assoc key value))))))
-
-(defn ^:no-doc controlled->js
-  "This is way simpler.
-
-  If v is a map, it gets merged into the schema. Otherwise
-  it's added as `:value`... and we give a good warning."
-  [k v schema k->on-change]
-  (let [m (-> (if (map? v)
-                (merge schema v)
-                (assoc schema :value v))
-              (assoc :onChange (k->on-change k)))]
-    (when-let [bumped (keys (select-keys schema (keys m)))]
-      (js/console.warn
-       "Schema entry for " k " matches an entry in the `:atom`. "
-       "The following keys are being evicted: "
-       bumped))
-    (clj->js m)))
-
-(defn ^:no-doc uncontrolled->js
-  "Uncontrolled is REQUIRED to have the goods."
-  [k schema]
-  (let [m (if (contains? schema :onChange)
-            schema
-            (do (js/console.warn
-                 (str "no onChange for uncontrolled "
-                      k "! Swapping in a no-op `:onChange`."))
-                (assoc schema :onChange (fn [_]))))]
-    (clj->js m)))
-
-(defn ^:no-doc set-controlled-entries!
-  "Set all remaining schemaless entries from the initial state."
-  [acc m k->on-change]
-  (letfn [(process [acc k v]
-            (doto acc
-              (o/set
-               (name k)
-               (controlled->js k v {} k->on-change))))]
-    (reduce-kv process acc m)))
-
-(defn ^:no-doc build-schema
-  "Given a schema and an initial state, plus a way to make on onChange that
-  propagates updates, builds a JS schema."
-  [schema state k->on-change]
-  (let [seen (atom #{})]
-    (letfn [(ignore [k v message]
-              (swap! seen conj k)
-              (js/console.warn (str "ignoring " k ", " v " in  atom; " message)))
-
-            (insert! [acc k v]
-              (swap! seen conj k)
-              (doto acc (o/set (name k) v)))
-            (rec [schema]
-              (reduce-kv
-               (fn [acc k entry]
-                 (let [entry (or entry {})]
-                   (cond
-                     (= "" (name k))
-                     (do (js/console.error
-                          (str "Keys can not be empty, if you want to hide a label use whitespace. Ignoring entry: "
-                               k ", " entry))
-                         acc)
-
-                     (@seen k)
-                     (do (js/console.error
-                          (str "Duplicate key: " k ", ignoring entry: " entry))
-                         acc)
-
-                     (primitive? entry)
-                     (do (js/console.error
-                          (str "Primitives not allowed in schema definition. Use an entry in the atom: "
-                               k ", " entry))
-                         acc)
-
-                     (vector? entry)
-                     (do (js/console.error
-                          (str "Vectors not allowed in schema definition. Use an entry in the atom: "
-                               k ", " entry))
-                         acc)
-
-                     (custom-input? entry)
-                     (do (when-let [v (get state k)]
-                           (ignore k v "schema has custom input."))
-                         (insert! acc k entry))
-
-                     (folder? entry)
-                     (do (when-let [v (get state k)]
-                           (ignore k v "schema registered as folder."))
-                         (insert! acc k (l/folder
-                                         (rec (:schema entry))
-                                         (clj->js
-                                          (:settings entry)))))
-
-                     (special-input? entry)
-                     (do (when-let [v (get state k)]
-                           (ignore k v "schema registered as special input."))
-                         (insert! acc k (clj->js entry)))
-
-                     (map? entry)
-                     (if-let [v (get state k)]
-                       (insert! acc k (controlled->js k entry v k->on-change))
-                       (insert! acc k (uncontrolled->js k entry)))
-
-                     :else
-                     (do (js/console.error
-                          (str "Unknown type " k ", " (pr-str entry) "; ignoring."))
-                         acc))))
-               (js-obj)
-               schema))]
-      (let [processed (rec schema)
-            remaining (apply dissoc state @seen)]
-        ;; now add in the keys from the atom that haven't been seen yet.
-        (set-controlled-entries! processed remaining k->on-change)))))
-
-(defn ^:no-doc opts->argv
-  [{:keys [folder-name schema atom store folder-settings]}]
-  (let [k->on-change  (on-change-fn atom)
-        initial-state (.-state atom)
-        ;; NOTE This function wrapper is required for `set` below to work. If
-        ;; you don't want to synchronize state back from the atom, do this. See
-        ;; below for more detail.
-        schema        (fn []
-                        (build-schema schema initial-state k->on-change))
-        hook-settings (when store #js {:store store})]
-    (if folder-name
-      [folder-name schema
-       (when folder-settings (clj->js folder-settings))
-       hook-settings]
-      [schema hook-settings])))
 
 ;; ## Components
 
@@ -263,7 +102,7 @@
         ;;
         ;; NOTE if we don't apply the function wrapper above, the return value
         ;; here is no longer a pair.
-        [_ set] (apply l/useControls (opts->argv opts))]
+        [_ set] (apply l/useControls (schema/opts->argv opts))]
     (react/useEffect
      (fn mount []
        (add-watch
