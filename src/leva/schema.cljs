@@ -85,6 +85,20 @@
                (controlled->js k v {} (k->on-change k)))))]
     (reduce-kv process acc m)))
 
+(defn normalize-entry
+  "Accepts an `entry` in a leva schema and normalizes `nil?`, `vector?`
+  or [[leva.types/primitive?]] values into a map for easier processing below.
+
+  Given a map-shaped `entry`, acts as identity."
+  [entry]
+  (cond (nil? entry) {}
+
+        (or (t/primitive? entry)
+            (vector? entry))
+        {:value entry}
+
+        :else entry))
+
 (defn build-schema
   "Given
 
@@ -106,7 +120,7 @@
             (rec [schema]
               (reduce-kv
                (fn [acc k entry]
-                 (let [entry (or entry {})]
+                 (let [entry (normalize-entry entry)]
                    (cond
                      ;; This first block of cases covers invalid schema entries
                      ;; that we'd like to ignore.
@@ -121,24 +135,6 @@
                           (str "Duplicate key: "
                                k ", ignoring appearance with value: "
                                entry))
-                         acc)
-
-                     (t/primitive? entry)
-                     (do (js/console.error
-                          (str "Ignoring key "
-                               k " with entry "
-                               entry
-                               "; Primitives not allowed in schema definition. "
-                               "Move this entry to the atom."))
-                         acc)
-
-                     (vector? entry)
-                     (do (js/console.error
-                          (str "Ignoring key "
-                               k " with entry "
-                               entry
-                               "; Vectors not allowed in schema definition. "
-                               "Move this entry to the atom."))
                          acc)
 
                      ;; This next block covers cases where the schema contains
@@ -172,8 +168,10 @@
                      ;; has a proper onChange handler (to prevent re-renders of
                      ;; the [[leva.core/Controls]] component).
                      (map? entry)
-                     (if-let [v (get state k)]
-                       (insert! acc k (controlled->js k entry v (k->on-change k)))
+                     (if (contains? state k)
+                       (let [on-change (k->on-change k)
+                             v         (get state k)]
+                         (insert! acc k (controlled->js k v entry on-change)))
                        (insert! acc k (uncontrolled->js k entry)))
 
                      :else
