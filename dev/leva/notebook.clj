@@ -39,7 +39,7 @@
 ;; ### Config
 
 (show-sci
- [leva/GlobalConfig
+ [leva/Config
   {:titleBar
    {:drag true
     :position {:x 0 :y 30}}}])
@@ -108,11 +108,10 @@
  [leva/Controls
   {:folder {:name "Special Inputs"}
    :schema
-   {"Sub Folder"
+   {"Yellow Subfolder"
     (leva/folder
      {:button (leva/button js/alert)
       :group  (leva/button-group
-               "Label"
                {"1px" #(js/alert "1px")
                 "2px" #(js/alert "2px")})
       :monitor (leva/monitor
@@ -120,7 +119,8 @@
                   (let [t (js/Date.now)]
                     (Math/sin (/ t 300))))
                 {:graph true
-                 :interval 30})})}}])
+                 :interval 30})}
+     {:color "yellow"})}}])
 
 ;; ### SubPanel
 
@@ -278,6 +278,14 @@
 ;; NOTE make a note that there is no guarantee this will work well.
 #_["@leva-ui/plugin-plot" :as p]
 
+;; There are more demos that live here
+;; https://github.com/pmndrs/leva/tree/main/demo/src/sandboxes, and we can
+;; access them with the same URL.
+;;
+;; For plugins, here is an example:
+;; https://github.com/pmndrs/leva/tree/main/packages/plugin-plot
+;;
+;; TODO maybe add links to the sandboxes in the notebook?
 
 ;; ## Thanks and Support
 

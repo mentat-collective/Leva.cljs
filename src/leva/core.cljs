@@ -18,11 +18,18 @@
 
 (defn button
   "Returns a schema entry that defines a button, given a function `on-click` and a
-  map `opt` of options."
+  map `opt` of options.
+
+  The `opts` allowed are any found in the types
+
+  - [`ButtonSettings`](https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L47)
+  - [`GenericSchemaItemOptions`](https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L144-L149)
+
+  In [public.ts](https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts)
+  in [Leva's repository](https://github.com/pmndrs/leva). "
   ([on-click]
    (button on-click {}))
   ([on-click opts]
-   ;; TODO note what is happening here, trying to get a more sane settings deal.
    (let [settings (select-keys opts [:disabled])
          settings (merge button-defaults settings)]
      (-> {:type (:button t/SpecialInputs)
@@ -31,7 +38,16 @@
          (merge (dissoc opts :type :onClick :disabled :settings))))))
 
 (defn button-group
-  "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L55-L64"
+  "Returns a schema entry that defines a button group, given either
+
+  - a label and a map of `{<string> (fn [get] ,,,)}`
+  - only the map
+
+  Where `get` is of type `string => value`, and allows you to query the internal
+  leva store.
+
+  Feel free to ignore `get` and query the stateful atom associated with
+  this [[Controls]] instance from the value function."
   ([opts]
    {:type (:button-group t/SpecialInputs)
     :opts opts})
@@ -41,14 +57,21 @@
            :opts opts}}))
 
 (defn monitor
-  "Relevant type for opts: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L71-L77
+  "Returns a schema entry that defines a \"monitor\", given as a first argument
+  either
 
-  Tons of stuff with a monitor demo:
-  https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy
+  - a no-arg function that returns a number, or
+  - a react `MutableRefObject` returned by `useRef`, where `(.-current ref)`
+    returns a number
 
-  The monitor is going to call a thunk for us that checks on something.
+  and an optional settings map as a second argument. The supported (optional)
+  settings are
 
-  settings can be graph or interval."
+  - `:graph`: if true, the returned monitor shows a graph. if false, the monitor
+    displays a number.
+
+  - `:interval`: the number of milliseconds to wait between queries of
+    `object-or-fn`."
   ([object-or-fn]
    (monitor object-or-fn {}))
   ([object-or-fn settings]
@@ -57,11 +80,25 @@
     :settings settings}))
 
 (defn folder
-  "Example: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/stories/Folder.stories.tsx#L71
+  "Given a sub-schema `schema` and an optional map of folder `settings`, returns a
+  schema entry that wraps `schema` in a subfolder.
 
-  Key is the folder name, value is this
+  The supported (optional) settings are
 
-  settings: https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87"
+  - `:collapsed` if true, the folder will be collapsed on initial render.
+    Defaults to false.
+
+  - `:render` (fn [get] <boolean>), providing dynamic control or whether or not
+    the folder appears.
+
+      `get` is of type `string => value`, and allows you to query the internal
+      leva store. If the `:render` fn returns true, this folder will be rendered in
+      the panel; if false it won't render.
+
+  - `:color` color string, sets the color of the folder title.
+
+  - `:order` number, sets the order of this folder relative to other components
+    at the same level."
   ([schema]
    (folder schema {}))
   ([schema settings]
@@ -70,30 +107,59 @@
     :settings settings}))
 
 ;; ## Components
+;;
+;; This section defines the top-level components available for customizing and
+;; declaring elements of the global panel and any subpanels you might create.
 
-(defn GlobalConfig
-  "Configures the global Leva store.
+(defn Config
+  "Component that configures a Leva panel with the supplied map of `opts` without
+  explicitly rendering any inputs into it. If `:store` is not provided,
+  configures the globally available Leva panel.
 
-  https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/Leva.tsx
+  See the
+  type [`LevaRootProps`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13-L93)
+  for a full list of available entries for `opts` and documentation for each.
 
-  Takes all of these options except for \"store\":
-  https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13
+  You can pass any number of `children` components if you like for
+  organizational purposes.
 
-  PRovide children if you like for organization."
+  If you pass `:store`, any [[Controls]] component in `children` will use that
+  store vs the store of the global panel.
+
+  NOTE: We recommend using [[SubPanel]] to declare non-global Leva panels,
+  rather than worrying about creating and passing your own Leva store via
+  `:store`. But for advanced use cases, please feel free!"
   [opts & children]
-  (into [:<> [:> l/Leva opts]] children))
-
-(defn SubPanel
-  "Use this to create a subpanel. Children DO pick up on these settings."
-  [opts & children]
-  (let [store (l/useCreateStore)]
+  (if-let [store (:store opts)]
     [:<>
      [:> l/LevaPanel (assoc opts :store store)]
-     (into [:> l/LevaStoreProvider {:store store}] children)]))
+     (into [:> l/LevaStoreProvider {:store store}] children)]
+    (into [:<> [:> l/Leva opts]] children)))
+
+;; TODO I THINK custom inputs are also going to need that onChange handler...
+(defn SubPanel
+  "Component that ... TODO finish!"
+  [opts & children]
+  {:pre [(not (:store opts))]}
+  (assert
+   (not (:store opts))
+   (str "`:store` is not supported by [[leva.core/SubPanel]]. "
+        "If you'd like to provide your own :store, "
+        "see [[leva.core/Config]]."))
+  (let [store (l/useCreateStore)]
+    (into [Config (assoc opts :store store)]
+          children)))
 
 (defn ^:no-doc Controls*
-  "Function component that backs [[Panel]]. atom is optional now!"
+  "Function component that backs [[Controls]]. See [[Controls]] for detailed
+  documentation."
   [opts]
+  (when-not (or (:atom opts) (:schema opts))
+    (throw
+     (js/Error.
+      (str "Error: we currently require either "
+           "an `:atom` or `:schema` option (or both!)"))))
+
   (let [[watch-id] (react/useState (str (random-uuid)))
         !state     (:atom opts)
         initial    (if !state (.-state !state) {})
@@ -101,11 +167,12 @@
         opts       (update opts :store #(or % (l/useStoreContext)))
 
         ;; NOTE that if we want to add a hook deps array here, we can conj it
-        ;; onto the end of the vector returned by `opts->argv`. In the current
-        ;; implementation, this hook is called on each re-render.
+        ;; onto the end of the vector returned by [[leva.schema/opts->argv]]. In
+        ;; the current implementation, this hook is called on each re-render.
         ;;
-        ;; NOTE if we don't apply the function wrapper above, the return value
-        ;; here is no longer a pair.
+        ;; NOTE if we don't apply the function wrapper
+        ;; in [[leva.schema/opts->argv]], the return value here is no longer a
+        ;; pair.
         [_ set] (apply l/useControls (schema/opts->argv opts))]
     (react/useEffect
      (fn mount []
@@ -123,7 +190,12 @@
     nil))
 
 (defn Controls
-  "We take `:atom` and `:schema`.
+  "We take
+
+  - `:folder`, `:schema`, `:atom`, `:store`
+
+
+  `:atom` and `:schema`, I guess `:store`, but let's not do that...
 
   Also
 
@@ -131,12 +203,3 @@
   `:store`..."
   [opts]
   [:f> Controls* opts])
-
-;; There are more demos that live here
-;; https://github.com/pmndrs/leva/tree/main/demo/src/sandboxes, and we can
-;; access them with the same URL.
-;;
-;; For plugins, here is an example:
-;; https://github.com/pmndrs/leva/tree/main/packages/plugin-plot
-;;
-;; TODO maybe add links to the sandboxes in the notebook?
