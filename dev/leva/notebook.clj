@@ -286,6 +286,13 @@
 ;; https://github.com/pmndrs/leva/tree/main/packages/plugin-plot
 ;;
 ;; TODO maybe add links to the sandboxes in the notebook?
+;;
+;; TODO test a custom input. I THINK these need onChange handlers too, always,
+;; or else they create re-renders. And this is part of the spec.... SO HANDLE
+;; IT!!!
+;;
+;; NOTE I added the code for this, but we have to test that this actually makes
+;; sense.
 
 ;; ## Thanks and Support
 

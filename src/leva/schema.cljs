@@ -153,7 +153,7 @@
                      (t/custom-input? entry)
                      (do (when-let [v (get state k)]
                            (ignore k v (str k " is registered as a custom input in the schema.")))
-                         (insert! acc k entry))
+                         (insert! acc k (uncontrolled->js k entry)))
 
                      (t/special-input? entry)
                      (do (when-let [v (get state k)]
