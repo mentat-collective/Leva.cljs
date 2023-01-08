@@ -37,8 +37,11 @@
   (let [m (-> (if (map? v)
                 (merge schema v)
                 (assoc schema :value v))
-              (assoc :onChange on-change))]
-    (when-let [evicted (keys (select-keys schema (keys m)))]
+              (assoc :onChange on-change))
+        new-keys (if (map? v)
+                   (into #{:onChange} (keys v))
+                   #{:value :onChange})]
+    (when-let [evicted (keys (select-keys schema new-keys))]
       (js/console.warn
        "Schema entry for " k " matches an entry in the `:atom`. "
        "The following keys are being evicted: "

@@ -1,15 +1,15 @@
 ^#:nextjournal.clerk
 {:toc true
  :no-cache true
- :visibility :hide-ns}
+ :visibility :hide-ns
+ :auto-expand-results? true}
 (ns leva.notebook
   (:require [mentat.clerk-utils.show :refer [show-sci]]))
 
 ;; # Leva.cljs
 ;;
-;; A [React](https://reactjs.org/)
-;; / [Reagent](https://reagent-project.github.io/) interface to
-;; the [Leva](https://github.com/pmndrs/leva/) GUI library.
+;; A [Reagent](https://reagent-project.github.io/) interface to
+;; the [Leva](https://github.com/pmndrs/leva/) declarative GUI library.
 
 ;; [![Build Status](https://github.com/mentat-collective/leva.cljs/actions/workflows/kondo.yml/badge.svg?branch=main)](https://github.com/mentat-collective/leva.cljs/actions/workflows/kondo.yml)
 ;; [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/mentat-collective/leva.cljs/blob/main/LICENSE)
@@ -31,12 +31,83 @@
 ;;
 ;; ## What is Leva?
 ;;
-;; Good question!
+;; [Leva](https://github.com/pmndrs/leva) is a JavaScript library for building
+;; declarative GUIs with many different input types, like the one hovering on
+;; the right side of this page. Supported inputs range from numeric sliders and
+;; color pickers to complex plugins like this [Bezier curve
+;; example](https://leva.pmnd.rs/?path=/story/plugins-bezier--default-bezier).
 ;;
-;; ## In Progress Demos
+;; [Leva.cljs](https://github.com/mentat-collective/leva.cljs) extends Leva with
+;; a set of [Reagent](https://reagent-project.github.io/) components that make
+;; it easy to synchronize the state of the GUI with an [ClojureScript
+;; atom](https://clojure.org/reference/atoms).
 ;;
+;; Think of your GUI like an interactive, beautiful view onto your page's state.
+;;
+;; ## Quickstart
+;;
+;; Install `Leva.cljs` into your Clojurescript project using the instructions at
+;; its Clojars page:
+
+;; [![Clojars
+;;    Project](https://img.shields.io/clojars/v/org.mentat/leva.cljs.svg)](https://clojars.org/org.mentat/leva.cljs)
+;;
+;; Or grab the most recent code using a Git dependency:
+;;
+;; ```clj
+;; ;; deps
+;; {io.github.mentat-collective/leva.cljs
+;;   {:git/sha "$GIT_SHA"}}
+;; ```
+
+;; Require `leva.core` in your namespace:
+
+;; ```clj
+;; (ns my-app
+;;   (:require [leva.core :as leva]
+;;             [reagent.core :as reagent]))
+;; ```
+
+;; Declare some state that you'd like to control with a GUI.
+
+(show-sci
+ (defonce !synced
+   (reagent/atom
+    {:number 10
+     :color {:r 10 :g 12 :b 4}
+     :string "Hi!"
+     :point {:x 1 :y 1}})))
+
+;; Pass the atom to the `leva/Controls` component to add its entries to the Leva
+;; panel hovering on the right, and bidirectionally bind its state to the
+;; interactive state in the panel:
+
+(show-sci
+ [leva/Controls
+  {:folder {:name "Quickstart"}
+   :atom !synced}])
+
+;; Drag the control panel around to a more convenient place on the page, then
+;; play around with the UI elements and watch the state change:
+
+(show-sci
+ [v/inspect @!synced])
+
+;; > If you're not familiar with React or Reagent, or what a "component" is,
+;; > please give the [Reagent homepage](https://reagent-project.github.io/) a
+;; > read. If this is your first Clojurescript experience, come say hi to
+;; > me (@sritchie) in the [Clojurians Slack](http://clojurians.net/) and I'll
+;; > get you started.
+
+;; ## Guides
 ;;
 ;; ### Config
+;;
+;; TODO show how to configure a global panel's options.
+
+;; Customize the panel:
+;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
+;; for more options
 
 (show-sci
  [leva/Config
@@ -44,52 +115,9 @@
    {:drag true
     :position {:x 0 :y 30}}}])
 
-;; ### Sync with Server
+;; ### Customizing via Schema
 ;;
-;; Note the Leva panel in the top right. The state is bi-directionally bound to
-;; TWO atoms, one of which syncs.
-
-
-
-;; Then add the panel and see it on the right. `leva/Controls` sends things to the
-;; global panel, and they accumulate.
-
-(show-sci
- (def !synced
-   (reagent/atom
-    {:number 10
-     :cake {:r 10 :g 12}
-     :string "Hi!"}))
-
- [:<>
-  [leva/Controls
-   {:folder {:name "Client / Server Sync"}
-    :atom !synced
-    :schema {:point {:a 10 :b 100}}}]])
-
-;; Try changing the values in the panel and hit `return` to update, or (for
-;; numeric values) drag the slider on the left side of the input box. Hold down
-;; `option/alt` to drag with small steps or `shift` to drag with big steps.
-;;
-;; Note that the server side state changes:
-
-;; ### Bidirectional syncing
-;;
-;; Now let's change the atom on the client side. Note the panel can drag the
-;; slider etc. They are tied!
-
-(show-sci
- [:<>
-  [:input
-   {:type :range :min 0 :max 10 :step 1
-    :value (:number @!synced)
-    :on-change
-    (fn [target]
-      (let [v (.. target -target -value)]
-        (swap! !synced assoc :number (js/parseInt v))))}]
-  [:pre (str @!synced)]])
-
-;; ## Stacking Global Options
+;; TODO also note that options stack up in the panel.
 
 (show-sci
  (reagent/with-let
@@ -97,30 +125,9 @@
             {:point {:x 10 :y 12}})]
    [:<>
     [leva/Controls
-     {:folder {:name "Local State"}
+     {:folder {:name "More State"}
       :atom !local}]
     [:pre (str @!local)]]))
-
-;; ## Special Inputs
-;;
-;; No atom necessary!
-(show-sci
- [leva/Controls
-  {:folder {:name "Special Inputs"}
-   :schema
-   {"Yellow Subfolder"
-    (leva/folder
-     {:button (leva/button js/alert)
-      :group  (leva/button-group
-               {"1px" #(js/alert "1px")
-                "2px" #(js/alert "2px")})
-      :monitor (leva/monitor
-                (fn []
-                  (let [t (js/Date.now)]
-                    (Math/sin (/ t 300))))
-                {:graph true
-                 :interval 30})}
-     {:color "yellow"})}}])
 
 ;; ### SubPanel
 
@@ -137,7 +144,114 @@
      [leva/Controls {:atom !state}]]
     [:pre (str @!state)]]))
 
+;; ### State Management
+
+;; #### Syncing via Atom
+;;
+;; TODO note that obviously we've already covered this, but this is what is
+;; going on.
+;;
+;; TODO Actually this is cool, show that we can change the atom and the UI changes too.
+;;
+;; Note the Leva panel in the top right. The state is bi-directionally bound to
+;; the atom.
+
+;; Then add the panel and see it on the right. `leva/Controls` sends things to the
+;; global panel, and they accumulate.
+
+;; Try changing the values in the panel and hit `return` to update, or (for
+;; numeric values) drag the slider on the left side of the input box. Hold down
+;; `option/alt` to drag with small steps or `shift` to drag with big steps.
+;;
+;; Now let's change the atom on the client side. Note the panel can drag the
+;; slider etc. They are tied!
+
+(show-sci
+ [:<>
+  [:input
+   {:type :range :min 0 :max 10 :step 1
+    :value (:number @!synced)
+    :on-change
+    (fn [target]
+      (let [v (.. target -target -value)]
+        (swap! !synced assoc :number (js/parseInt v))))}]
+  [:pre (str @!synced)]])
+
+;; The remaining examples will use this style.
+
+;; #### explicit onChange
+;;
+;; TODO you can also give value and onChange.
+
+;; value and onValue syncing
+
+;; ### All Input Types
+
+;; TODO show off the full range.
+
+;; Here are all of the possible inputs: https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L130-L142
+
+;; | ImageInput
+;;  NOTE {:image <thing>} with settings mashed in
+
+;; | ColorVectorInput
+;; NOTE primitive form == map of specific kv pairs. CHECK FOR THESE EXACT ONES since if they don't match we fall back to vectors!!
+
+;; type ColorRgbaInput = { r: number; g: number; b: number; a?: number }
+;; type ColorHslaInput = { h: number; s: number; l: number; a?: number }
+;; type ColorHsvaInput = { h: number; s: number; v: number; a?: number }
+;; export type ColorVectorInput = ColorRgbaInput | ColorHslaInput | ColorHsvaInput
+
+;; type SchemaItem =
+;; | InputWithSettings<number, NumberSettings>
+;; | InputWithSettings<boolean>
+;; | InputWithSettings<string>
+;; | IntervalInput
+;; | ColorVectorInput
+;; | Vector2dInput
+;; | Vector3dInput
+;; | ImageInput
+;; | SelectInput
+;; | BooleanInput
+;; | StringInput
+;; | CustomInput<unknown>
+
+;; OnChangeHandler = (value: any, path: string, context: OnChangeHandlerContext) => void
+
+;; ### Special Inputs
+;;
+;; No atom necessary!
+(show-sci
+ [leva/SubPanel {:fill true :titleBar {:drag false}}
+  [leva/Controls
+   {:folder {:name "Special Inputs"}
+    :schema
+    {"Yellow Subfolder"
+     (leva/folder
+      {:button (leva/button js/alert)
+       :group  (leva/button-group
+                {"1px" #(js/alert "1px")
+                 "2px" #(js/alert "2px")})
+       "Cake (r)"
+       (leva/monitor
+        (fn []
+          (let [t (js/Date.now)]
+            (Math/sin (/ t 300))))
+        {:graph true
+         :interval 30})}
+      {:color "yellow"})}}]])
+
+;; ### Schema vs State
+;;
+;; show how to customize with a schema.
+
+;; ### TODO folder options
+
+;; ## Advanced Guides
+
 ;; ### Conditional toggling
+;;
+;; TODO I should actually do this with the `:render` keyword.
 
 (show-sci
  (reagent/with-let
@@ -160,130 +274,36 @@
          :atom !local}])]
     [:pre (str @!local)]]))
 
-;; ### Schema vs State
 ;; TODO scan for more goodies from storybook
 ;; https://leva.pmnd.rs/?path=/story/inputs-string--simple
 
-;; TODO document specific options, like `:render` boolean fn,
-;;
 ;; document other inputs https://github.com/pmndrs/leva/blob/main/docs/inputs.md
-;;
-;; folders? https://github.com/pmndrs/leva/blob/main/docs/getting-started.md#nested-folders
-
-
-;; ## Numbers
-;;
-;; Increase / decrease numbers with arrow keys, with alt (±0.1) and shift (±10)
-;; modifiers support.
-
-;;
-;; You can get more control by passing in a schema...
-
-;; ### No atoms
-;;
-;; ### Input Types
-
-;; Customize the panel:
-;; https://github.com/pmndrs/leva/blob/main/docs/configuration.md, see storybook
-;; for more options
 
 ;; TODO maybe do leva-busy for fun. https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy?file=/src/App.tsx:3276-3281
 
-;; Here are all of the possible inputs: https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L130-L142
-
-;; type SchemaItem =
-;; | InputWithSettings<number, NumberSettings>
-;; | InputWithSettings<boolean>
-;; | InputWithSettings<string>
-;; | IntervalInput
-;; | ColorVectorInput
-;; | Vector2dInput
-;; | Vector3dInput
-;; | ImageInput
-;; | SelectInput
-;; | BooleanInput
-;; | StringInput
-;; | CustomInput<unknown>
-
-;; OnChangeHandler = (value: any, path: string, context: OnChangeHandlerContext) => void
-
-;; InputOptions is a bunch of BS, but all we care about is onChange
-
-
-;; remaining types:
-;; | ImageInput
-;;  NOTE {:image <thing>} with settings mashed in
-
-;; | ColorVectorInput
-;; NOTE primitive form == map of specific kv pairs. CHECK FOR THESE EXACT ONES since if they don't match we fall back to vectors!!
-
-;; type ColorRgbaInput = { r: number; g: number; b: number; a?: number }
-;; type ColorHslaInput = { h: number; s: number; l: number; a?: number }
-;; type ColorHsvaInput = { h: number; s: number; v: number; a?: number }
-;; export type ColorVectorInput = ColorRgbaInput | ColorHslaInput | ColorHsvaInput
-
-;; TODO we need to handle non-primitive stuff coming in
-;; from onChange etc.
-
-;; NOTE :value, :onChange with other settings in there too
-;; | InputWithSettings<number, NumberSettings>
-;; | InputWithSettings<boolean>
-;; | InputWithSettings<string>
-;; | IntervalInput NOTE primitive form == [l r] with min max, either :value, :onChange
-;; TODO following ones are EITHER a map with 2/3 entries as value, OR a pair/triple.
-;; | Vector2dInput NOTE same, missing min max
-;; | Vector3dInput NOTE same as prev but with three
-
-
-;; | SelectInput ;; TODO ANYTHING with :options too. :value :onChange deal applies here.
-;; | DONE BooleanInput primitive onlyI
-;; | DONE StringInput since it's covered by the first thing above?
-;; | CustomInput<unknown>
-
-
-;; type SchemaItemWithOptions =
-;; | DONE number
-;; | DONE boolean
-;; | DONE string
-;; | (SchemaItem & InputOptions)
-;; | DONE (SpecialInput & GenericSchemaItemOptions)
-;; | DONE FolderInput<unknown>
-
-;; TODO ONLY MAPS ALLOWED, but fall through to here only after checking on others like image etc.
-
-;; NOTE: if it's a special input... we pass it along, no changes.
-;;
-;; all of the other LevaInputs can synchronize, no problem.
-;;
-;; What about the custom inputs? Maybe we say that for anything beyond the
-;; basics, you have to manually deal with those yourself... but maybe not, maybe
-;; if it has a value, then onChange can synchronize.
-;;
-;; NOTE: I think no state is fine if you have onChange handlers for everyone.
-;; But if you are missing one AND don't provide an atom you get an error.
-;;
-;; EITHERRRRR you set value and onChange... or you let the atom handle those. If
-;; you have anyone with no value and onChange AND AN ATOM you fail.
-;;
-;; NOTE are there default values for these? can I skip "value", like if you
-;; don't want to pull it from the atom?
-
-;; ### TODO NON-reactive atoms work too
-;;
-;; ### TODO use cursors to control only some sub-piece of the state atom
+;; ### TODO Cursors for State
 ;;
 ;; ### TODO controlling order
 
 ;; https://github.com/pmndrs/leva/pull/394
 
-;;
-;; ## Folders
-;;
-;; note the settings
+;; ### TODO Plugins
 
-;; TODO test that this CAN work if I want to test it out.
+;; test that this CAN work if I want to test it out.
 ;; NOTE make a note that there is no guarantee this will work well.
 #_["@leva-ui/plugin-plot" :as p]
+
+;; TODO test a custom input. I THINK these need onChange handlers too, always,
+;; or else they create re-renders. And this is part of the spec.... SO HANDLE
+;; IT!!!
+
+
+;; NOTE I added the code for this, but we have to test that this actually makes
+;; sense.
+
+;; ### TODO Resources from Leva
+
+;; plugin list etc
 
 ;; There are more demos that live here
 ;; https://github.com/pmndrs/leva/tree/main/demo/src/sandboxes, and we can
@@ -294,13 +314,6 @@
 ;;
 ;; TODO maybe add links to the sandboxes in the notebook?
 ;;
-;; TODO test a custom input. I THINK these need onChange handlers too, always,
-;; or else they create re-renders. And this is part of the spec.... SO HANDLE
-;; IT!!!
-;;
-;; NOTE I added the code for this, but we have to test that this actually makes
-;; sense.
-
 ;; ## Thanks and Support
 
 ;; To support this work and my other open source projects, consider sponsoring

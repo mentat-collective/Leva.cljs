@@ -177,6 +177,9 @@
         ;; onto the end of the vector returned by [[leva.schema/opts->argv]]. In
         ;; the current implementation, this hook is called on each re-render.
         ;;
+        ;; I think we'll need to do this if we want to auto-refresh when schema
+        ;; changes occur.
+        ;;
         ;; NOTE if we don't apply the function wrapper
         ;; in [[leva.schema/opts->argv]], the return value here is no longer a
         ;; pair.
