@@ -137,13 +137,30 @@
      [leva/Controls {:atom !state}]]
     [:pre (str @!state)]]))
 
+;; ### Conditional toggling
+
+(show-sci
+ (reagent/with-let
+   [!show  (reagent/atom {:show true})
+    !local (reagent/atom
+            {:point {:x 10 :y 12}})]
+   [:<>
+    [leva/SubPanel {:fill true
+                    :titleBar
+                    {:drag false}}
+     [leva/Controls
+      {:folder {:name "Local State"}
+       :atom   !show
+       :schema {:show
+                {:label "Show remaining?"
+                 :order -1}}}]
+     (when (:show @!show)
+       [leva/Controls
+        {:folder {:name "Local State"}
+         :atom !local}])]
+    [:pre (str @!local)]]))
+
 ;; ### Schema vs State
-
-
-;; TODO for schema. IF we have an atom... then synchronize!
-;; - if we have a schema... do NOT!
-;; - if we have a schema, can we ALSO allow it to feed updates out? Can we do a schema AND then tie parts of it to an atom?
-
 ;; TODO scan for more goodies from storybook
 ;; https://leva.pmnd.rs/?path=/story/inputs-string--simple
 
@@ -238,22 +255,18 @@
 ;;
 ;; all of the other LevaInputs can synchronize, no problem.
 ;;
-;; What about the custom inputs? Maybe we say that for
-;; anything beyond the basics, you have to manually
-;; deal with those yourself... but maybe not, maybe if
-;; it has a value, then onChange can synchronize.
+;; What about the custom inputs? Maybe we say that for anything beyond the
+;; basics, you have to manually deal with those yourself... but maybe not, maybe
+;; if it has a value, then onChange can synchronize.
 ;;
-;; NOTE: I think no state is fine if you have onChange
-;; handlers for everyone. But if you are missing one
-;; AND don't provide an atom you get an error.
+;; NOTE: I think no state is fine if you have onChange handlers for everyone.
+;; But if you are missing one AND don't provide an atom you get an error.
 ;;
-;; EITHERRRRR you set value and onChange... or you let
-;; the atom handle those. If you have anyone with no
-;; value and onChange AND AN ATOM you fail.
+;; EITHERRRRR you set value and onChange... or you let the atom handle those. If
+;; you have anyone with no value and onChange AND AN ATOM you fail.
 ;;
-;; NOTE are there default values for these? can I
-;; skip "value", like if you don't want to pull it from
-;; the atom?
+;; NOTE are there default values for these? can I skip "value", like if you
+;; don't want to pull it from the atom?
 
 ;; ### TODO NON-reactive atoms work too
 ;;
@@ -267,12 +280,6 @@
 ;; ## Folders
 ;;
 ;; note the settings
-
-#_[leva/Controls
-   {:folder
-    {:name     "state 1"
-     :settings {:collapsed true}}
-    :atom leva.notebook/!state1}]
 
 ;; TODO test that this CAN work if I want to test it out.
 ;; NOTE make a note that there is no guarantee this will work well.

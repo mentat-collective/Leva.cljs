@@ -203,11 +203,14 @@
         ;; more detail.
         schema        (fn []
                         (build-schema schema initial-state k->on-change))
-        hook-settings (when store #js {:store store})]
+        hook-settings (if store
+                        #js {:store store}
+                        #js {})]
     (if-let [folder-name (:name folder)]
       [folder-name
        schema
-       (when-let [settings (:settings folder)]
-         (clj->js settings))
+       (if-let [settings (:settings folder)]
+         (clj->js settings)
+         #js {})
        hook-settings]
       [schema hook-settings])))

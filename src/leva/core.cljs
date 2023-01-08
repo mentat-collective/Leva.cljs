@@ -136,9 +136,16 @@
      (into [:> l/LevaStoreProvider {:store store}] children)]
     (into [:<> [:> l/Leva opts]] children)))
 
-;; TODO I THINK custom inputs are also going to need that onChange handler...
 (defn SubPanel
-  "Component that ... TODO finish!"
+  "Component that configures a non-global, standalone Leva panel with the supplied
+  map of `opts`.p
+
+  Any instance of [[Controls]] passed as `children` will render into this
+  subpanel and not touch the global store.
+
+  See the
+  type [`LevaRootProps`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13-L93)
+  for a full list of available entries for `opts` and documentation for each."
   [opts & children]
   {:pre [(not (:store opts))]}
   (assert
@@ -190,16 +197,32 @@
     nil))
 
 (defn Controls
-  "We take
+  "Component that renders inputs into a global or local Leva control panel,
+  possibly synchronizing the panel's state into a provided atom.
 
-  - `:folder`, `:schema`, `:atom`, `:store`
+  Placing this component anywhere in the render tree will add controls to the
+  global Leva panel.
 
+  To modify a local Leva panel, nest this component inside of a [[SubPanel]].
 
-  `:atom` and `:schema`, I guess `:store`, but let's not do that...
+  Supported `opts` are:
 
-  Also
+  - `:schema`: A leva schema definition. Any value _not_ present in the supplied
+    `:atom` should provide an `:onChange` handler.
 
-  `:folder {:name :settings}` https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/types/public.ts#L81-L87
-  `:store`..."
+  - `:atom`: atom of key => initial value for schema entries. Any entry found in
+     both `:atom` and in `:schema` will remain synchronized between the panel and
+     the supplied `:atom`.
+
+  - `:folder`: optional map with optional keys `:name` and `:settings`:
+
+    - `:name`: if provided, these controls will be nested inside of a folder
+      with this name.
+
+    - `:settings`: optional map customizing the folder's settings.
+      See [[folder]] for a description of the supported options.
+
+  - `:store`: this is an advanced option that you probably won't need. If you
+    _do_ need this, pass a store created via leva's `useCreateStore`."
   [opts]
   [:f> Controls* opts])
