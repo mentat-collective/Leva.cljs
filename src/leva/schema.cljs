@@ -5,6 +5,13 @@
             [leva.types :as t]
             [goog.object :as o]))
 
+(defn ->clj
+  "Slightly more efficient `js->clj` that skips primitive types."
+  [v]
+  (if (t/primitive? v)
+    v
+    (js->clj v :keywordize-keys true)))
+
 (defn on-change-fn
   "Given some atom `!state`, returns a function that accepts some `key` and
   returns a Leva OnChangeHandler that sets the entry in `!state` for `key` to
@@ -14,9 +21,7 @@
     (fn k->on-change [k]
       (fn on-change [value _path _context]
         (let [state (.-state !state)
-              v     (if (t/primitive? value)
-                      value
-                      (js->clj value :keywordize-keys true))]
+              v     (->clj value)]
           (when (not= v (get state k ::not-found))
             (swap! !state assoc k v)))))
     (fn [_k] (fn [_ _ _]))))
@@ -63,7 +68,10 @@
   changed value."
   [k schema]
   (let [m (if (contains? schema :onChange)
-            schema
+            (update schema :onChange
+                    (fn [f]
+                      (fn [v]
+                        (f (->clj v)))))
             (do (js/console.warn
                  (str "no `:onChange` for uncontrolled "
                       k "! Swapping in a no-op `:onChange`."))
@@ -95,6 +103,8 @@
   Given a map-shaped `entry`, acts as identity."
   [entry]
   (cond (nil? entry) {}
+
+        (object? entry) (->clj entry)
 
         (or (t/primitive? entry)
             (vector? entry))
@@ -156,7 +166,10 @@
                      (t/custom-input? entry)
                      (do (when-let [v (get state k)]
                            (ignore k v (str k " is registered as a custom input in the schema.")))
-                         (insert! acc k (uncontrolled->js k entry)))
+                         (let [updated (update entry :__customInput
+                                               #(->> (normalize-entry %)
+                                                     (uncontrolled->js k)))]
+                           (insert! acc k (clj->js updated))))
 
                      (t/special-input? entry)
                      (do (when-let [v (get state k)]

@@ -44,11 +44,6 @@
   (contains? SpecialInputTypes (:type entry)))
 
 (defn custom-input?
-  "Returns true if we have a custom input, false otherwise. JS objects since you
-  use their constructor.
-
-  NOTE that these will be JS objects since they're built with the constructor
-  over there."
+  "Returns true if we have a custom input, false otherwise."
   [entry]
-  (boolean
-   (o/get entry "__specialInput")))
+  (contains? entry :__customInput))
