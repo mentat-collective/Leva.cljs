@@ -6,7 +6,7 @@
     <groupId>org.mentat</groupId>
     <artifactId>leva.cljs</artifactId>
     <name>leva.cljs</name>
-    <description>Clojurescript / Reagent interface for Leva.</description>
+    <description>Clojurescript / Reagent interface for the Leva declarative GUI library.</description>
     <url>https://leva.mentat.org</url>
     <licenses>
         <license>
