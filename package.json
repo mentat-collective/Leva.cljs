@@ -1,6 +1,4 @@
 {
-  "name": "leva.cljs",
-  "version": "0.1.0",
   "dependencies": {
     "@codemirror/autocomplete": "6.3.4",
     "@codemirror/commands": "6.1.2",

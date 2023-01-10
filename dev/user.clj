@@ -11,6 +11,10 @@
 (def index
   "dev/leva/notebook.clj")
 
+(def build-target
+  {:index index
+   :git/url "https://github.com/mentat-collective/leva.cljs"})
+
 (def ^{:doc "static site defaults for local and github-pages modes."}
   defaults
   {:out-path   "public"
@@ -33,16 +37,22 @@
   (Thread/sleep 500)
   (clerk/show! index))
 
+(defn git-sha
+  "Returns the sha hash of this project's current git revision."
+  []
+  (-> (sh "git" "rev-parse" "HEAD")
+      (:out)
+      (clojure.string/trim)))
+
 (defn replace-sha-template!
   "Given some `path`, modifies the file at `path` replaces any occurence of the
   string `$GIT_SHA` with the actual current sha of the repo."
-  [path]
-  (let [sha (-> (sh "git" "rev-parse" "HEAD")
-                (:out)
-                (clojure.string/trim))]
-    (-> (slurp path)
-        (clojure.string/replace "$GIT_SHA" sha)
-        (->> (spit path)))))
+  ([path]
+   (replace-sha-template! path (git-sha)))
+  ([path sha]
+   (-> (slurp path)
+       (clojure.string/replace "$GIT_SHA" sha)
+       (->> (spit path)))))
 
 (defn static-build!
   "This task is used to generate static sites for local use, github pages
@@ -65,6 +75,7 @@
   All `opts` are forwarded to [[nextjournal.clerk/build!]]."
   [opts]
   (let [{:keys [out-path cas-prefix]} (merge defaults opts)
+        sha (or (:git/sha opts) (git-sha))
         cas (cv/store+get-cas-url!
              {:out-path (str out-path "/js") :ext "js"}
              (fs/read-all-bytes "public/js/main.js"))]
@@ -72,8 +83,9 @@
            "/js/viewer.js"
            (str cas-prefix "js/" cas))
     (clerk/build!
-     (merge {:index index}
-            (assoc opts :out-path out-path)))
+     (merge build-target
+            (assoc opts :out-path out-path
+                   :git/sha sha)))
     (replace-sha-template!
      (str out-path "/index.html"))))
 
