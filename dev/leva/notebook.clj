@@ -39,7 +39,7 @@
 ;;
 ;; [Leva.cljs](https://github.com/mentat-collective/leva.cljs) extends Leva with
 ;; a set of [Reagent](https://reagent-project.github.io/) components that make
-;; it easy to synchronize the state of the GUI with an [ClojureScript
+;; it easy to synchronize the state of the GUI with a [ClojureScript
 ;; atom](https://clojure.org/reference/atoms).
 ;;
 ;; Think of your GUI like an interactive, beautiful view onto your page's state.
@@ -112,14 +112,14 @@
 ;; ### Panel Configuration
 ;;
 ;; `leva/Config` takes a map of options and applies them as settings to the
-;; global Leva panel. The following example adjusts the initial position of the
-;; panel downward:
+;; global Leva panel. The following example sets the title of the panel and
+;; marks it as draggable (the default):
 
 (show-sci
  [leva/Config
   {:titleBar
    {:drag true
-    :position {:x 0 :y 30}}}])
+    :title "Drag Me!"}}])
 
 ;; See the
 ;; type [`LevaRootProps`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13-L93)
@@ -269,50 +269,90 @@
 
 ;; ### Standard Inputs
 ;;
+;; This section contains usage examples for all of the standard inputs available
+;; to Leva. To tighten up the examples, we'll define a Reagent component here
+;; that accepts an initial state and, optionally, a schema for customizing that
+;; state.
+;;
+;; The component will generate a subpanel pinned to the page.
+
+(show-sci
+ (defn ControlDemo
+   ([initial-state]
+    (ControlDemo initial-state {}))
+   ([initial-state schema]
+    (reagent/with-let
+      [!state (reagent/atom initial-state)]
+      [:div {:style {:width "60%" :margin "auto"}}
+       [leva/SubPanel {:fill true :titleBar {:drag false}}
+        [leva/Controls
+         {:atom !state
+          :schema schema}]]
+       [v/inspect @!state]]))))
+
 ;; > Some of the following examples show off inputs using `:schema` entries only
 ;; > without an associated `:atom`. This is just to keep the examples tighter.
 ;; > You'll want to use an `:atom` or `:onChange`, as described above in [State
 ;; > Management](#state-management).
-;;
+
 ;; #### Number
 
+;; Adjust numerical inputs with the up/down arrow keys or by dragging on the
+;; small "v" icon on the left side of the input. Hold down the alt/option or
+;; shift keys to slow or speed up the rate of change.
+
+;; Providing an explicit `:step` will override the auto-calculated step size.
+
+;; The `:suffix` option coerces the value to a string; the slider will change
+;; the value preceding the suffix inside the string.
+
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:number 10})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local}]]
-    [:pre (str @!local)]]))
+ [ControlDemo
+  {:number 10
+   :stepped 10
+   :width "10px"}
+
+  {:stepped {:step 0.25}
+   :width
+   {:suffix "px"
+    :label "with suffix"}}])
 
 ;; #### Boolean
 
+;; Boolean values resolve to a toggle.
+
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:checkbox true})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local}]]
-    [:pre (str @!local)]]))
+ [ControlDemo
+  {:checkbox true}])
 
 ;; #### String
+;;
+;; String values generate text input fields. See the component below for
+;; explanations of the various customization options available.
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:string "Hit enter after editing!"})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local}]]
-    [:pre (str @!local)]]))
+ [ControlDemo
+  {:string "Hit enter after editing!"
+   :multiple-lines "Leva also supports <textarea/>\nAllowing for\nmultiple lines"
+   :fixed-rows "You can specify the number of rows you need."
+   :read-only "This text is not editable but still supports\nline\nbreaks."}
 
-;; #### Image
+  {:string {:order -1}
+   :multiple-lines {:rows true}
+   :fixed-rows {:rows 3}
+   :read-only {:editable false}}])
 
-;; To get an image, specify a map with an `:image` key as your value.
+;; #### Image / File Upload
+
+;; Setting a map-shaped value with an `:image` key will insert a button that
+;; triggers a file upload. Initialize your value with `{:image nil}`.
+
+;; On a successful upload, the value will change to `{:image <blob-url>}`, where
+;; `blob-url` is a `URL` that references
+;; a [`Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob).
+;;
+;; Upload an image below and see the resulting state and uploaded image appear
+;; on the page.
 
 (show-sci
  (reagent/with-let
@@ -330,150 +370,143 @@
 
 ;; #### Color Picker
 
-;; This example shows all possible color input styles.
+;; Leva provides many different ways to specify a color. All of these inputs
+;; resolve to a color picker. Specifying an alpha channel will insert an extra
+;; alpha slider at the bottom of the color picker.
+;;
+;; Expand the state below the panel and adjust the pickers to see state updates
+;; for each color style.
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:Name "royalblue"
-             :Hex "#9442ff"
-             :Hex8 "#8b33ffaa"
-             :RgbString "rgb(255, 47, 162)"
-             :RgbaString "rgba(233, 30, 99, 0.9)"
-             :Rgb {:r 0 :g 150 :b 136 }
-             :Rgba {:r 139 :g 195 :b 74 :a 0.5}
-             :Hsl {:h 4 :s 90 :l 58}
-             :Hsla {:h 36 :s 100 :l 50 :a 1}
-             :HslString "hsl(199, 98%, 48%)"
-             :HslaString "hsla(187, 1%, 42%, 0.9)"
-             :Hsv { :h 238 :s 100 :v 70 }
-             :Hsva { :h 58 :s 92 :v 100 :a 0.3 }})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local}]]
-    [v/inspect @!local]]))
+ [ControlDemo
+  {:Name "royalblue"
+   :Hex "#9442ff"
+   :Hex8 "#8b33ffaa"
+   :RgbString "rgb(255, 47, 162)"
+   :RgbaString "rgba(233, 30, 99, 0.9)"
+   :Rgb {:r 0 :g 150 :b 136 }
+   :Rgba {:r 139 :g 195 :b 74 :a 0.5}
+   :Hsl {:h 4 :s 90 :l 58}
+   :Hsla {:h 36 :s 100 :l 50 :a 1}
+   :HslString "hsl(199, 98%, 48%)"
+   :HslaString "hsla(187, 1%, 42%, 0.9)"
+   :Hsv { :h 238 :s 100 :v 70 }
+   :Hsva { :h 58 :s 92 :v 100 :a 0.3 }}])
 
 ;; #### 2D Vector
 
-;; Specify these with either a 2-element vector or a map. If you have a map with
-;; two keys, the system infers vector2d.
+;; Create a 2D vector input by specifying either a 2-element vector or map with
+;; two key-value pairs. Each coordinate has its own [Number](#number)-style
+;; input. The dot to the left of each coordinate is a joystick. Click and drag
+;; to open a small plane you can use to select both coordinates at once.
+
+;; > Due to Leva's [duck typing](https://en.wikipedia.org/wiki/Duck_typing) of
+;; > elements, be careful not to specify key names like `:image`, or else Leva
+;; > will ignore your second key-value pair and create an Image input.
+
+;; This example also shows how to configure either style of vector input by
+;; removing its joystick, inverting the usual up-is-negative direction of the
+;; `y` coordinate input, or adding an aspect ratio lock with `:lock true`.
+
+;; With a locked vector, changing one coordinate with the slider will change the
+;; other coordinate's value to keep the same aspect ratio.
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:vector-style [1 2]
-             :map-style {:x 1 :y 2}})]
-   [:div {:style {:width "80%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local}]]
-    [v/inspect @!local]]))
+ [ControlDemo
+  {:vector-style [1 2]
+   :map-style {:x 1 :y 2}
+   :with-lock [1 2]
+   :no-joystick [1 2]
+   :inverted [1 2]}
+
+  {:vector-style {:order -2}
+   :map-style {:order -1}
+   :with-lock {:lock true}
+   :no-joystick {:joystick false}
+   :inverted {:joystick "invertY"}}])
 
 ;; #### 3D Vector
 
-;; Similar to 2d vector but without a joystick.
-
-;; Specify these with either a 2-element vector or a map. If you have a map with
-;; two keys, the system infers vector2d... UNLESS you pick three of the keys
-;; from the [Color Picker](#color-picker) above, or `:image`.
+;; Similar to [2D vector](#2d-vector) with a third coordinate and no joystick.
+;;
+;; When using the map form, make sure not to use a key named `:image`, or any of
+;; the keysets from the [Color Picker](#color-picker) input, like `:r`, `:g` and
+;; `:b`.
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:vector-style [1 2 3]
-             :map-style {:x 1 :y 2 :z 3}})]
-   [:div {:style {:width "80%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local}]]
-    [v/inspect @!local]]))
+ [ControlDemo
+  {:vector-style [1 2 3]
+   :map-style {:x 1 :y 2 :z 3}}])
 
 ;; #### Interval
 ;;
-;; Note that here we need to use `:schema` along with `:atom` to provide
-;; options. Otherwise our `[1 2]` is inferred to be a [2d vector](#2d-vector).
+;; An interval is defined with a 2-element vector, along with schema entries for
+;; `:min` and `:max`. (Without `:min` and `:max` Leva will infer a [2D
+;; vector](#2d-vector).)
+;;
+;; Adjust either number with the slider, or type new values into the numeric
+;; inputs.
+;;
+;; Entering a value outside of `:min` or `:max` will truncate the value into the
+;; correct range.
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:interval [1 2]})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local
-       :schema {:interval
-                {:min 0 :max 10}}}]]
-    [:pre (str @!local)]]))
+ [ControlDemo
+  {:interval [1 2]}
+
+  {:interval
+   {:min 0 :max 10}}])
 
 
 ;; #### Select
 
-;; If your schema contains `:options`, then ANY value you have in your state map
-;; will be interpreted as a choice and rendered as a dropdown.
+;; The selector allows you to choose some predefined object from a dropdown of
+;; choices. Specify any object you like for your value, and provide a vector or
+;; map of options via an `:options` key in your schema.
+;;
+;; If you provide a map, the keys will be used as labels and the values as your
+;; choices. For a vector, the dropdown will use the string representations of
+;; each choice.
+;;
+;; If your initial value is not present in `:choices` it will be appended to the
+;; list of possible options.
+
+;; > Note that all non-function choices round-trip through Leva, so any Clojure
+;; > data type like a set or keyword won't survive. Keywords become strings,
+;; > sets become vectors, etc.
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:selected-value "cake"})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:atom !local
-       :schema {:selected-value
-                {:options
-                 ["cake" "bananas" "margarine"]}}}]]
-    [:pre (str @!local)]]))
+ [ControlDemo
+  {:selected-value "cake"
+   :custom-labels "hello"}
 
-;; #### Custom Inputs
+  {:selected-value
+   {:options
+    ["cake" "bananas" "margarine"]}
 
-;; This example shows off a bezier curve. You'll have to install this with:
-
-;; ```sh
-;; npm install @leva-ui/plugin-bezier
-;; ```
-
-;; ```clj
-;; (ns my-app
-;;   (:require ["@leva-ui/plugin-bezier" :as b]
-;;             [leva.core :as leva]
-;;             [reagent.core :as reagent]))
-;; ```
-
-;; Then here is an example:
-
-(show-sci
- (reagent/with-let
-   [!local (reagent/atom nil)]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true :titleBar {:drag false}}
-     [leva/Controls
-      {:schema
-       {:curve
-        (b/bezier
-         {:value    [0.54, 0.05, 0.6, 0.98]
-          :onChange (fn [v] (reset! !local v))})}}]]
-    [v/inspect @!local]]))
-
-;; The options supported here
-;; are [`InputOptions`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L182-L188)
-;; plus whatever input the plugin supports. Unfortunately these don't seem well
-;; documented... soyou'll have to look at the [Stories
-;; page](https://leva.pmnd.rs/?path=/story/plugins-bezier--default-bezier), and
-;; usually go find the associated stories page in the repo. Here are the [Bezier
-;; stories](https://github.com/pmndrs/leva/blob/main/packages/plugin-bezier/src/Bezier.stories.tsx),
-;; for example.
+   :custom-labels
+   {:options
+    {"Hello World" "hello"
+     "CAR and CDR" "lisp"
+     "Vector" [1 2]
+     "Function as Value" (fn [] "cake")}}}])
 
 ;; ### Special Inputs
 
-;; These all come with special constructors in `leva.core`.
-
-;; None of these do any synchronization with the atom, so you have to work
-;; through their interfaces. See the constructors for documentation.
+;; Special inputs are panel elements like buttons or folders that aren't
+;; typical "inputs" like those in [Standard Inputs](#standard-inputs)
+;; above.
+;;
+;; These all come with special constructors
+;; in [`leva.core`](https://github.com/mentat-collective/leva.cljs/blob/main/src/leva/core.cljs).
+;; See
+;;  [these constructors in `leva.core`](https://github.com/mentat-collective/leva.cljs/blob/main/src/leva/core.cljs) for documentation.
 
 ;; #### Folder
 ;;
-;; `leva/folder` allows you to nest subfolders.
+;; `leva.core/folder` takes a sub-schema and, optionally, a map of settings.
+;; Items in the sub-schema will be nested in a folder with name equal to the
+;; folder's key in the schema.
 
 (show-sci
  [:div {:style {:width "60%" :margin "auto"}}
@@ -494,21 +527,27 @@
 
 ;; #### Button
 ;;
-;; Buttons don't sync with atoms; provide a no-arg click handler to the
-;; `leva/button` constructor.
+;; `leva.core/button` takes an `on-click` handler and an optional map of
+;; settings, and inserts a button into the schema labeled with the button's
+;; schema key.
 
 (show-sci
  [:div {:style {:width "60%" :margin "auto"}}
   [leva/SubPanel {:fill true :titleBar {:drag false}}
    [leva/Controls
     {:schema
-     {:button (leva/button
-               (fn []
-                 (js/alert "Button clicked!")))}}]]])
+     {:button
+      (leva/button
+       (fn []
+         (js/alert "Button clicked!")))}}]]])
 
 ;; #### Button Group
 ;;
-;; Defines a group of buttons.
+;; A Button group is a horizontal group of small buttons, each with an
+;; associated `on-click` handler.
+;;
+;; Define a button group by calling `leva.core/button-group` with a map of label
+;; => `on-click` (or, in the 2-arity case, a label and then the same map).
 
 (show-sci
  (reagent/with-let
@@ -526,8 +565,24 @@
 
 ;; #### Monitor
 
-;; Monitor a no-arg function. Slide or change the `:number` slider and watch the
-;; monitor value respond.
+;; A monitor allows you to monitor repeated return values from some no-argument
+;; function. Obviously the idea here is that this function internally queries
+;; some other stateful value! Initialize a monitor by passing a no-arg function
+;; to `leva.core/monitor` along with (optionally) a map of settings.
+;;
+;; > Note that you can also pass a React `MutableRefObject` as returned
+;; > by [`useRef`](https://reactjs.org/docs/hooks-reference.html#useref),
+;; > where `(.-current ref)` returns a number. The monitor will then monitor the
+;; > value of the ref's `current` property.
+;;
+;; Supported settings are
+
+;; - `:graph`: if `true`, the returned monitor shows a graph. if `false`, the
+;; monitor displays a number.
+;; - `:interval`: the number of milliseconds to wait between queries of the
+;;   `ref` or function
+
+;; Adjust the `:number` slider below and watch the graphical output change:
 
 (show-sci
  (reagent/with-let
@@ -535,7 +590,7 @@
    [:div {:style {:width "60%" :margin "auto"}}
     [leva/SubPanel {:fill true :titleBar {:drag false}}
      [leva/Controls
-      {:folder {:name "Special Inputs"}
+      {:folder {:name "Monitor Demo"}
        :atom !local
        :schema
        {:number {:order -1}
@@ -546,9 +601,90 @@
          {:graph true
           :interval 30})}}]]]))
 
+;; ### Custom Plugins
+
+;; Leva is extensible, and has support for a number
+;; of [plugins](https://github.com/pmndrs/leva/tree/main/packages). Plugins by
+;; default will _not_ synchronize with your `:atom`; you'll have to provide
+;; an [explicit onChange](#explicit-onchange) to capture state (which you can of
+;; course `swap!` into an atom!)
+;;
+;; > Once [this issue](https://github.com/mentat-collective/leva.cljs/issues/2)
+;; > is resolved this limitation will no longer exist.
+;;
+;; Leva comes bundled with the following plugins:
+
+;; - [Bezier curve](https://github.com/pmndrs/leva/tree/main/packages/plugin-bezier) ([storybook examples]((https://leva.pmnd.rs/?path=/story/plugins-bezier)))
+;; - [Date picker](https://github.com/pmndrs/leva/tree/main/packages/plugin-dates) ([storybook examples]((https://leva.pmnd.rs/?path=/story/plugins-dates)))
+;; - [Function plotter](https://github.com/pmndrs/leva/tree/main/packages/plugin-plot) ([storybook examples]((https://leva.pmnd.rs/?path=/story/plugins-plot)))
+;; - [Spring simulation](https://github.com/pmndrs/leva/tree/main/packages/plugin-sprin) ([storybook examples]((https://leva.pmnd.rs/?path=/story/plugins-spring)))
+
+;; The following demo shows off the Bezier curve plugin.
+
+;; #### Bezier curve
+
+;; First, install the plugin with:
+
+;; ```sh
+;; npm install @leva-ui/plugin-bezier
+;; ```
+
+;; > See the links above for the package to install for your plugin of actual
+;; > interest.
+
+;; Then add the package to your namespace:
+
+;; ```clj
+;; (ns my-app
+;;   (:require ["@leva-ui/plugin-bezier" :as b]
+;;             [leva.core :as leva]
+;;             [reagent.core :as reagent]))
+;; ```
+
+;; Each plugin exposes a function that you can use to generate a schema entry.
+;; Because custom plugins can't (yet,
+;; see [##2](https://github.com/mentat-collective/leva.cljs/issues/2))
+;; synchronize with your atom automatically, you'll need to provide an
+;; `:onChange` function to retrieve new values.
+
+(show-sci
+ (reagent/with-let
+   [!local (reagent/atom nil)]
+   [:div {:style {:width "60%" :margin "auto"}}
+    [leva/SubPanel {:fill true :titleBar {:drag false}}
+     [leva/Controls
+      {:schema
+       {:curve
+        (b/bezier
+         {:value    [0.54, 0.05, 0.6, 0.98]
+          :onChange (fn [v] (reset! !local v))})}}]]
+    [v/inspect @!local]]))
+
+;; Supported options are the union
+;; of [`InputOptions`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L182-L188)
+;; and any option mentioned in the plugin's documentation.
+;;
+;; If documentation is poor, your best bet is to follow the `storybook examples`
+;; link referenced above, and then track down the associated `*.stories.tsx`
+;; file associated with the plugin to see what code generated the story.
+
+;; Here is the source for the [Bezier
+;; stories](https://github.com/pmndrs/leva/blob/main/packages/plugin-bezier/src/Bezier.stories.tsx),
+;; for example.
+
 ;; ## Advanced Guides
+;;
+;; These guides cover usage patterns that don't fit with any particular input
+;; type, but are useful to know about.
 
 ;; ### Conditional toggling
+;;
+;; All input elements support a `:render` option. Provide a no-argument
+;; function; if this function returns `true`, the component will render. If
+;; `false`, the component will remain hidden.
+;;
+;; The following example conditionally shows a 2D vector input based on the
+;; state of a checkbox:
 
 (show-sci
  (reagent/with-let
@@ -567,12 +703,17 @@
                 :point
                 {:render
                  (fn [] (:show @!local))}}}]]
-    [:pre (str @!local)]]))
+    [v/inspect @!local]]))
 
 ;; ### Cursors for State
 
-;; Use a Reagent cursor if you want to pin your UI to some sub-piece of larger
-;; state.
+;; `:atom` can take anything atom-like, not just ClojureScript or Reagent atoms.
+;; For example, if you want to synchronize a panel with some subset of a larger
+;; piece of state, you might pass a [Reagent
+;; cursor](https://github.com/reagent-project/reagent/blob/master/doc/ManagingState.md#cursors).
+;;
+;; This example renders the current state of a cursor synchronized with a 2D
+;; vector input, and the full state of its parent atom below it:
 
 (show-sci
  (reagent/with-let
@@ -591,29 +732,45 @@
 ;;
 ;; ### Input Ordering
 
-;; The schema and `:atom` maps aren't ordered, so you can use `:order` keys to
-;; set a relative ordering.
+;; Because ClojureScript's maps aren't ordered, you might find that your panel
+;; is showing your inputs in some order other than the one you declared in you
+;; `:schema` or `:atom` inputs.
+;;
+;; Every input supports an `:order` key that you can use to provide a number for
+;; relative ordering (0 by default).
+;;
+;; This example forces the ordering of 3 inputs with `:order` entries:
 
 (show-sci
  [:div {:style {:width "60%" :margin "auto"}}
   [leva/SubPanel {:fill true :titleBar {:drag false}}
    [leva/Controls
-    {:schema {:x {:value 10
-                  :label "I'm last"
-                  :order 2}
-              :y {:value 10
-                  :label "I'm first"
-                  :order -1}
-              :z {:value 10
-                  :label "In the middle"
-                  :order 0}}}]]])
+    {:schema
+     {:x {:value 10
+          :label "I'm last"
+          :order 2}
+      :y {:value 10
+          :label "I'm first"
+          :order -1}
+      :z {:value 10
+          :label "In the middle"
+          :order 0}}}]]])
 
 ;; ### Resources from Leva
+;;
+;; Leva is a big library, and the documentation above doesn't come close to
+;; covering all possible options and use cases for all input types.
+;;
+;; Here are some more resources available about Leva:
 
 ;; - [Storybook](https://leva.pmnd.rs/)
 ;; - [Github](https://github.com/pmndrs/leva)
 
 ;; #### Code Sandboxes
+;;
+;; These sandboxes provide implementations of more complex panels meant to show
+;; off use cases like panel theming, more advanced styling and the different
+;; plugins available.
 
 ;; - [leva-advanced-panels](https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-advanced-panels?file=/src/App.tsx)
 ;; - [leva-busy](https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-busy?file=/src/App.tsx)
@@ -626,6 +783,16 @@
 ;; - [leva-scroll](https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-scroll?file=/src/App.tsx)
 ;; - [leva-theme](https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-theme?file=/src/App.tsx)
 ;; - [leva-transient](https://codesandbox.io/s/github/pmndrs/leva/tree/main/demo/src/sandboxes/leva-transient?file=/src/App.tsx)
+
+;; ## Who is using Leva.cljs?
+
+;; The following projects use Leva.cljs:
+
+;; - [MathBox.cljs](https://mathbox.mentat.org)
+
+;; If you want to show off your use of Leva.cljs, please [file a
+;; ticket](https://github.com/mentat-collective/leva.cljs/issues/new) and let us
+;; know!
 
 ;; ## Thanks and Support
 
