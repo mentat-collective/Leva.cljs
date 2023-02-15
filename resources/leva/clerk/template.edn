@@ -1,0 +1,17 @@
+{:description "TODO replace me with a description of your project!"
+ :clerk-port 7777
+ :leva-version "0.2.0"
+ :clerk-sha "4180ed31c2864687a770f6d4f625303bd8e75437"
+ :clerk-utils-sha "1752f0e4b26116182996da20f6d47e3382a934ea"
+ :shadow-port 8765
+ :shadow-version "2.20.14"
+ :clj-version "1.11.1"
+ :cljs-version "1.11.60"
+ :http-server-port 8080
+ :cname ""
+ :transform
+ [["src" "src"
+   {"custom.cljs" "{{top/file}}/custom.cljs"
+    "sci_extensions.cljs" "{{top/file}}/sci_extensions.cljs"}]
+  ["notebooks" "notebooks"
+   {"main.clj" "{{top/file}}/{{main/file}}.clj"}]]}

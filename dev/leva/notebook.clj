@@ -675,6 +675,86 @@
 ;; stories](https://github.com/pmndrs/leva/blob/main/packages/plugin-bezier/src/Bezier.stories.tsx),
 ;; for example.
 
+;; ## Leva.cljs via SCI
+;;
+;; `Leva.cljs` is compatible with [SCI, the Small Clojure
+;; Interpreter](https://github.com/babashka/sci).
+;;
+;; To install `Leva.cljs` into your SCI context, require
+;; the [`leva.sci`](https://cljdoc.org/d/org.mentat/leva.cljs/CURRENT/api/leva.sci)
+;; namespace and call `leva.sci/install!`:
+
+;; ```clj
+;; (ns myproject.sci-extensions
+;;   (:require [leva.sci]))
+
+;; (leva.sci/install!)
+;; ```
+;;
+;; If you want more granular control, see the [cljdoc page for
+;; `leva.sci`](https://cljdoc.org/d/org.mentat/leva.cljs/CURRENT/api/leva.sci)
+;; for an SCI config and distinct SCI namespace objects that you can piece
+;; together.
+;;
+;; > Note that `Leva.cljs` does not ship with a dependency on SCI, so you'll
+;; > need to install your own version.
+;;
+;; ## Leva.cljs via Clerk
+;;
+;; Using `Leva.cljs` with Nextjournal's [Clerk](https://clerk.vision/) gives you
+;; the ability to write notebooks like this one with embedded 2D graphs.
+;;
+;; Doing this requires that you generate a custom ClojureScript build for your
+;; Clerk project. The easiest way to do this for an existing project is with
+;; the [`clerk-utils` project](https://clerk-utils.mentat.org/). Follow the
+;; instructions on the [`clerk-utils` guide for custom
+;; ClojureScript](https://clerk-utils.mentat.org/#custom-clojurescript-builds).
+;;
+;; If this is your first time using Clerk, use the [`clerk-utils/custom`
+;; template described here](https://clerk-utils.mentat.org/#project-template) to
+;; generate a new project.
+;;
+;; Once you have your custom build set up, follow the ["Extending
+;; SCI"](https://clerk-utils.mentat.org/#extending-sci) instructions and install
+;; `Leva.cljs` using `leva.sci/install!`, [as described
+;; above](#leva.cljs-via-sci).
+
+;; ## Project Template
+;;
+;; `Leva.cljs` includes
+;; a [`deps-new`](https://github.com/seancorfield/deps-new) template called
+;; [`leva/clerk`](https://github.com/mentat-collective/clerk-utils/tree/main/resources/clerk_utils/custom)
+;; that makes it easy to configure a new Clerk project with everything described
+;; in ["Leva.cljs via Clerk"](#leva.cljs-via-clerk) already configured.
+
+;; First, install the [`deps-new`](https://github.com/seancorfield/deps-new) tool:
+
+;; ```sh
+;; clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.4.13"}' :as new
+;; ```
+
+;; To create a new Clerk project based on
+;; [`leva/clerk`](https://github.com/mentat-collective/clerk-utils/tree/main/resources/clerk_utils/custom)
+;; in a folder called `my-notebook-project`, run the following command:
+
+^{::clerk/visibility {:code :hide}}
+(clerk/md
+(format "
+```sh
+clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/sha \"%s\"}}}' \\
+-Tnew create \\
+:template leva/clerk \\
+:name myusername/my-notebook-project
+```" (docs/git-sha)))
+
+;; The README.md file in the generated project contains information on how to
+;; develop within the new project.
+
+;; If you have an existing Clerk notebook project and are considering adding
+;; `Leva.cljs`, you might consider
+;; using [`leva/clerk`](https://github.com/mentat-collective/leva.cljs/tree/main/resources/leva/clerk)
+;; to get some ideas on how to structure your own project.
+
 ;; ## Advanced Guides
 ;;
 ;; These guides cover usage patterns that don't fit with any particular input
@@ -690,23 +770,23 @@
 ;; state of a checkbox:
 
 (show-sci
- (reagent/with-let
-   [!local (reagent/atom
-            {:show true
-             :point {:x 10 :y 12}})]
-   [:div {:style {:width "60%" :margin "auto"}}
-    [leva/SubPanel {:fill true
-                    :titleBar
-                    {:drag false}}
-     [leva/Controls
-      {:folder {:name "Local State"}
-       :atom   !local
-       :schema {:show
-                {:label "show point?"}
-                :point
-                {:render
-                 (fn [] (:show @!local))}}}]]
-    [v/inspect @!local]]))
+(reagent/with-let
+  [!local (reagent/atom
+           {:show true
+            :point {:x 10 :y 12}})]
+  [:div {:style {:width "60%" :margin "auto"}}
+   [leva/SubPanel {:fill true
+                   :titleBar
+                   {:drag false}}
+    [leva/Controls
+     {:folder {:name "Local State"}
+      :atom   !local
+      :schema {:show
+               {:label "show point?"}
+               :point
+               {:render
+                (fn [] (:show @!local))}}}]]
+   [v/inspect @!local]]))
 
 ;; ### Cursors for State
 
