@@ -1,11 +1,27 @@
 (ns build
   "tools.build declarations for the leva.cljs library."
-  (:require [clojure.tools.build.api :as b]))
+  (:require [clojure.data.xml :as xml]
+            [clojure.tools.build.api :as b]
+            [clojure.tools.build.tasks.write-pom :as write-pom]))
+
+(xml/alias-uri 'pom "http://maven.apache.org/POM/4.0.0")
+
+(alter-var-root
+ #'write-pom/to-dep
+ (fn [old]
+   (fn [[_ {:keys [mvn/scope]} :as pair]]
+     (cond-> (old pair)
+       scope
+       (conj [::pom/scope scope])))))
 
 ;; ## Variables
 
 (def lib 'org.mentat/leva.cljs)
 (def version "0.1.0")
+(def pom-deps
+  {'org.babashka/sci
+   {:mvn/version "0.6.37"
+    :mvn/scope "provided"}})
 
 (defn- ->version
   ([] version)
@@ -16,7 +32,10 @@
 
 ;; source for jar creation.
 (def class-dir "target/classes")
-(def basis (b/create-basis {:project "deps.edn"}))
+(def basis
+  (b/create-basis
+   {:project "deps.edn"
+    :extra {:deps pom-deps}}))
 
 (defn ->jar-file [version]
   (format "target/%s-%s.jar" (name lib) version))
@@ -36,13 +55,18 @@
   [{:keys [version-suffix] :as opts}]
   (let [version  (->version version-suffix)
         jar-file (->jar-file version)]
-    (b/write-pom {:class-dir class-dir
-                  :lib lib
-                  :version version
-                  :scm {:tag (str "v" version)}
-                  :basis basis
-                  :src-pom "template/pom.xml"
-                  :src-dirs ["src"]})
+    (b/write-pom
+     {:class-dir class-dir
+      :lib lib
+      :version version
+      :scm
+      {:tag (str "v" version)
+       :connection "scm:git:git://github.com/mentat-collective/leva.cljs.git"
+       :developConnection "scm:git:ssh://git@github.com/mentat-collective/leva.cljs.git"
+       :url "https://github.com/mentat-collective/leva.cljs"}
+      :basis basis
+      :src-pom "template/pom.xml"
+      :src-dirs ["src"]})
     (doseq [f ["README.md" "LICENSE" "deps.edn"]]
       (b/copy-file {:src f :target (format "%s/%s" class-dir f)}))
     (b/copy-dir {:src-dirs ["src"]

@@ -138,7 +138,7 @@
 
 (defn SubPanel
   "Component that configures a non-global, standalone Leva panel with the supplied
-  map of `opts`.p
+  map of `opts`.
 
   Any instance of [[Controls]] passed as `children` will render into this
   subpanel and not touch the global store.

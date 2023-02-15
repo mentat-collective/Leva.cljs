@@ -4,7 +4,13 @@
  :visibility :hide-ns}
 (ns leva.notebook
   {:nextjournal.clerk/auto-expand-results? true}
-  (:require [mentat.clerk-utils.show :refer [show-sci]]))
+  (:require [mentat.clerk-utils.docs :as docs]
+            [mentat.clerk-utils.show :refer [show-sci]]
+            [nextjournal.clerk :as clerk]))
+
+^{::clerk/visibility {:code :hide :result :hide}}
+(clerk/eval-cljs
+ '(require '[leva.core :as leva]))
 
 ;; # Leva.cljs
 ;;
@@ -16,8 +22,7 @@
 ;; [![cljdoc badge](https://cljdoc.org/badge/org.mentat/leva.cljs)](https://cljdoc.org/d/org.mentat/leva.cljs/CURRENT)
 ;; [![Clojars Project](https://img.shields.io/clojars/v/org.mentat/leva.cljs.svg)](https://clojars.org/org.mentat/leva.cljs)
 ;;
-;; > The interactive documentation on this page was generated from [this source
-;; > file](https://github.com/mentat-collective/leva.cljs/blob/$GIT_SHA/dev/leva/notebook.clj)
+;; > The interactive documentation on this page was generated
 ;; > using [Clerk](https://github.com/nextjournal/clerk). Follow
 ;; > the [instructions in the
 ;; > README](https://github.com/mentat-collective/leva.cljs/tree/main#interactive-documentation-via-clerk)
@@ -53,14 +58,12 @@
 ;;    Project](https://img.shields.io/clojars/v/org.mentat/leva.cljs.svg)](https://clojars.org/org.mentat/leva.cljs)
 ;;
 ;; Or grab the most recent code using a Git dependency:
-;;
-;; ```clj
-;; ;; deps
-;; {io.github.mentat-collective/leva.cljs
-;;   {:git/sha "$GIT_SHA"}}
-;; ```
 
-;; Require `leva.core` in your namespace:
+^{::clerk/visibility {:code :hide}}
+(docs/git-dependency
+ "mentat-collective/leva.cljs")
+
+;; Require `leva.core` in your ClojureScript namespace:
 
 ;; ```clj
 ;; (ns my-app
