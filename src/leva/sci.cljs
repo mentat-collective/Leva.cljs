@@ -25,17 +25,8 @@
 
 (defn install!
   "Called with no arguments, installs [[config]] into the shared SCI context
-  store.
-
-  Takes an optional `:aliases` map of alias symbol => namespace symbol.
-
-  For example, to install all namespaces, but alias `leva.core` to `leva`, call:
-
-  ```clj
-  (leva.sci/install! {'leva 'leva.core})
-  ```"
-  ([] (install! {}))
-  ([aliases]
-   (sci.ctx-store/swap-ctx!
-    sci/merge-opts
-    (assoc config :aliases aliases))))
+  store."
+  []
+  (sci.ctx-store/swap-ctx!
+   sci/merge-opts
+   config))
