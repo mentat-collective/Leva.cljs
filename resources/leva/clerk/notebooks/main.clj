@@ -48,7 +48,7 @@
 
 ;; The following snippet implements the example from
 ;; the ["Quickstart"](https://leva.mentat.org/#quickstart) section of
-;; the [`Leva.cljs` docs notebook](https://leva.mentat.org/#quickstart)
+;; the [`Leva.cljs` docs notebook](https://leva.mentat.org/#quickstart).
 
 ;; Declare some state that you'd like to control with a GUI. Each entry's key
 ;; becomes its label, and Leva infers the correct input from the value's type.
@@ -74,4 +74,4 @@
 ;; play around with the UI elements and watch the state change:
 
 (show-sci
- [v/inspect @!synced])
+ [nextjournal.clerk.viewer/inspect @!synced])

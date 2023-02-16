@@ -24,8 +24,7 @@
    :namespaces namespaces})
 
 (defn install!
-  "Called with no arguments, installs [[config]] into the shared SCI context
-  store."
+  "Installs [[config]] into the shared SCI context store."
   []
   (sci.ctx-store/swap-ctx!
    sci/merge-opts

@@ -25,40 +25,44 @@ clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/sha "5b613fe
 > `org_name/project_name`) where you expect to host the project. The above
 > command will create a new project in the folder `my-leva-project` in the
 > directory where you run the command.
+>
+> To use a different version of the template, replace the `:git/sha` above with
+> the sha of version you need from the [Leva.cljs commit
+> history](https://github.com/mentat-collective/Leva.cljs/commits/main).
 
 The generated project will contains more guides and information in its
 `README.md` and in the generated Clerk notebook.
 
 ## Template Keyword Options
 
-You can customize the `leva/clerk` template by supplying any of the
-following key-value pairs to the above command (default values in parentheses):
+You can customize the `leva/clerk` template by supplying any of the following
+key-value pairs to the above command (See [`template.edn`][template-edn-url] for
+default values):
 
 - `:description`: This string is inserted at the top of your generated project's
   README.md.
-- `:leva-version`: (`"0.2.0"`) version of [`Leva.cljs` from
+- `:leva-version`: version of [`Leva.cljs` from
   Clojars][clojars-url]. See the [Clojars page][clojars-url] for version
   choices.
-- `:clerk-port`: (`7777`) the port used by `clerk/serve!` during interactive
+- `:clerk-port`: the port used by `clerk/serve!` during interactive
   development.
-- `:clerk-sha`: (`"4180ed31c2864687a770f6d4f625303bd8e75437"`) the hash of the
-  Clerk version you'd like to use in the template. (`clerk-utils/custom` uses a
-  [git dependency](https://clojure.org/news/2018/01/05/git-deps) for Clerk.)
-- `:shadow-port`: (`8765`) the port that [`shadow-cljs`][shadow-url] uses to
-  serve compiled JavaScript during interactive development.
-- `:shadow-version`: (`"2.20.14"`) the version of [`shadow-cljs`][shadow-url]
-  required by the generated project.
-- `:clj-version`: (`"1.11.1"`) the version of Clojure required by the generated
-  project.
-- `:cljs-version`: (`"1.11.60"`) the version of ClojureScript required by the
-  generated project. (_note that this needs to meet or exceed the version
-  declared in the [`shadow-cljs` `deps.edn`
+- `:clerk-sha`: the hash of the Clerk version you'd like to use in the template.
+  (`clerk-utils/custom` uses a [git
+  dependency](https://clojure.org/news/2018/01/05/git-deps) for Clerk.)
+- `:shadow-port`: the port that [`shadow-cljs`][shadow-url] uses to serve
+  compiled JavaScript during interactive development.
+- `:shadow-version`: the version of [`shadow-cljs`][shadow-url] required by the
+  generated project.
+- `:clj-version`: the version of Clojure required by the generated project.
+- `:cljs-version`: the version of ClojureScript required by the generated
+  project. (_note that this needs to meet or exceed the version declared in the
+  [`shadow-cljs` `deps.edn`
   file](https://github.com/thheller/shadow-cljs/blob/master/deps.edn) for the
   `shadow-cljs` version you've chosen._)
-- `:http-server-port`: (`8080`) The port used by `bb serve` and `bb
-  publish-local` to serve the local statically built site.
-- `:cname`: (`""`) If you're serving your GitHub Pages build from a custom URL,
-  pass the value (like `"clerk-utils.mentat.org"`) of the custom site via this
+- `:http-server-port`: The port used by `bb serve` and `bb publish-local` to
+  serve the local statically built site.
+- `:cname`: If you're serving your GitHub Pages build from a custom URL, pass
+  the value (like `"clerk-utils.mentat.org"`) of the custom site via this
   argument.
 
 ## Thanks and Support
@@ -78,3 +82,4 @@ Distributed under the [MIT License](LICENSE). See [LICENSE](LICENSE).
 [leva-cljs-url]: https://leva.mentat.org
 [deps-new-url]: https://github.com/seancorfield/deps-new
 [shadow-url]: https://shadow-cljs.github.io/docs/UsersGuide.html
+[template-edn-url]: https://github.com/mentat-collective/Leva.cljs/blob/main/resources/leva/clerk/template.edn

@@ -54,8 +54,7 @@
 
 ;; ## JavaScript Libraries
 ;;
-;; See the [JavaScript
-;; Libraries](https://clerk-utils.mentat.org/#javascript-libraries) section of
-;; the [Clerk-utils docs](https://clerk-utils.mentat.org) for instructions on
-;; how to make NPM dependencies like "react" available inside of Clerk's
-;; viewers.
+;; See the [Extending SCI](https://clerk-utils.mentat.org/#extending-sci)
+;; section of the [Clerk-utils docs](https://clerk-utils.mentat.org) for
+;; instructions on how to make NPM dependencies like "react" available inside of
+;; Clerk's viewers.

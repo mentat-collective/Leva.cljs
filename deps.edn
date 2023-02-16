@@ -7,13 +7,14 @@
    :extra-deps
    {org.clojure/clojure       {:mvn/version "1.11.1"}
     org.clojure/clojurescript {:mvn/version "1.11.60"}
-    org.mentat/clerk-utils    {:mvn/version "0.3.0"}
+    ;; org.mentat/clerk-utils    {:mvn/version "0.3.0"}
+    io.github.mentat-collective/clerk-utils {:git/sha "718c6fa3064909b30a4668e89f3b18fe851f3d28"}
 
     io.github.nextjournal/clerk
-    {:git/sha "4180ed31c2864687a770f6d4f625303bd8e75437"}
+    {:git/sha "fad499407d979916d21b33cc7e46e73f7a485e37"}
     io.github.nextjournal/clerk.render
     {:git/url "https://github.com/nextjournal/clerk"
-     :git/sha "4180ed31c2864687a770f6d4f625303bd8e75437"
+     :git/sha "fad499407d979916d21b33cc7e46e73f7a485e37"
      :deps/root "render"}}
    :exec-fn user/build!}
 
