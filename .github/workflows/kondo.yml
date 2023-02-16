@@ -12,9 +12,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - uses: DeLaGuardo/setup-clojure@master
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@master
         with:
           cli: latest
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install babashka
         uses: just-sultanov/setup-babashka@v2
