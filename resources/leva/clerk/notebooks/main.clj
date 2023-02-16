@@ -46,83 +46,32 @@
 
 ;; ## Leva Quickstart
 
-;; The following snippet implements the example from the ["Making Things
-;; Interactive"](https://mafs.mentat.org/#making-things-interactive) section of
-;; the [`Leva.cljs` docs
-;; notebook](https://mafs.mentat.org/#making-things-interactive):
+;; The following snippet implements the example from
+;; the ["Quickstart"](https://leva.mentat.org/#quickstart) section of
+;; the [`Leva.cljs` docs notebook](https://leva.mentat.org/#quickstart)
 
-
-;; TODO fix
-
-;; ^{::clerk/width :wide}
-;; (show-sci
-;;  (reagent/with-let [!phase (reagent/atom [0 0])]
-;;    [:<>
-;;     [mafs/Mafs
-;;      {:view-box {:x [-10 10] :y [-2 2]}
-;;       :preserve-aspect-ratio false}
-;;      [mafs.coordinates/Cartesian
-;;       {:subdivisions 4
-;;        :x-axis
-;;        {:lines Math/PI
-;;         :labels mafs/labelPi}}]
-;;      [mafs.plot/OfX
-;;       {:y (fn [x]
-;;             (let [shift (first @!phase)]
-;;               (Math/sin (- x shift))))}]
-;;      [mafs/MovablePoint
-;;       {:atom !phase
-;;        :constrain "horizontal"}]]
-;;     [:pre
-;;      (str "Phase shift: " (first @!phase))]]))
-
-;; One potential wrinkle to note when using `Leva.cljs` in Clerk is that you
-;; have to define any function you'd like to use over on the ClojureScript side.
-;; You won't be able to use this function (defined on the JVM) with Leva:
-
-(defn square [x]
-  (* x x))
-
-;; But _this_ version will work, since it's wrapped in
-;; `mentat.clerk-utils.show/show-sci`, and is therefore evaluated on the browser
-;; side:
+;; Declare some state that you'd like to control with a GUI. Each entry's key
+;; becomes its label, and Leva infers the correct input from the value's type.
 
 (show-sci
- (defn square [x]
-   (* x x)))
+ (defonce !synced
+   (reagent.core/atom
+    {:number 10
+     :color {:r 10 :g 12 :b 4}
+     :string "Hi!"
+     :point {:x 1 :y 1}})))
 
-;; ## Leva Clerk Viewer
-;;
-;; Here's an example of a viewer that lets us instantiate a `Leva.cljs` graph
-;; using data from the JVM. This viewer takes its `:view-box` argument:
+;; Pass the atom to the `leva.core/Controls` component via the `:atom` key to
+;; add its entries to the Leva panel hovering on the right, and bidirectionally
+;; bind its state to the interactive state in the panel:
 
-#_(def parabola-viewer
-    {:transform-fn clerk/mark-presented
-     :render-fn
-     '(fn [view-box]
-        (js/console.log view-box)
-        (reagent/with-let [!phase (reagent/atom [0 0])]
-          [:<>
-           [mafs/Mafs
-            {:view-box view-box
-             :preserve-aspect-ratio false}
-            [mafs.coordinates/Cartesian
-             {:subdivisions 4
-              :x-axis
-              {:lines Math/PI
-               :labels mafs/labelPi}}]
-            [mafs.plot/OfX
-             {:y (let [zero (first @!phase)]
-                   (fn [x]
-                     (* x (- x zero))))}]
-            [mafs/MovablePoint
-             {:atom !phase
-              :constrain "horizontal"}]]
-           [:pre
-            (str "Phase shift: " (first @!phase))]]))})
+(show-sci
+ [leva.core/Controls
+  {:folder {:name "Quickstart"}
+   :atom !synced}])
 
-;; We can apply it here:
-#_
-^{::clerk/viewer parabola-viewer}
-{:x [-10 10]
- :y [-2 2]}
+;; Drag the control panel around to a more convenient place on the page, then
+;; play around with the UI elements and watch the state change:
+
+(show-sci
+ [v/inspect @!synced])
