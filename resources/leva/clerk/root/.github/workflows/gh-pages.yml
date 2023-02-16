@@ -18,12 +18,13 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/deps.edn') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Install clojure tools
         uses: DeLaGuardo/setup-clojure@4.0
         with:
-          cli: 1.11.1.1208 # Clojure CLI based on tools.deps
+          cli: latest
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install babashka
