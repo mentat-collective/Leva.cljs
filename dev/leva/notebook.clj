@@ -4,7 +4,15 @@
  :visibility :hide-ns}
 (ns leva.notebook
   {:nextjournal.clerk/auto-expand-results? true}
-  (:require [mentat.clerk-utils.show :refer [show-sci]]))
+  (:require [mentat.clerk-utils.docs :as docs]
+            [mentat.clerk-utils.show :refer [show-sci]]
+            [nextjournal.clerk :as clerk]))
+
+^{::clerk/visibility {:code :hide :result :hide}}
+(clerk/eval-cljs
+ ;; These aliases only apply inside this namespace.
+ '(require '[leva.core :as leva])
+ '(require '[reagent.core :as reagent]))
 
 ;; # Leva.cljs
 ;;
@@ -16,8 +24,7 @@
 ;; [![cljdoc badge](https://cljdoc.org/badge/org.mentat/leva.cljs)](https://cljdoc.org/d/org.mentat/leva.cljs/CURRENT)
 ;; [![Clojars Project](https://img.shields.io/clojars/v/org.mentat/leva.cljs.svg)](https://clojars.org/org.mentat/leva.cljs)
 ;;
-;; > The interactive documentation on this page was generated from [this source
-;; > file](https://github.com/mentat-collective/leva.cljs/blob/$GIT_SHA/dev/leva/notebook.clj)
+;; > The interactive documentation on this page was generated
 ;; > using [Clerk](https://github.com/nextjournal/clerk). Follow
 ;; > the [instructions in the
 ;; > README](https://github.com/mentat-collective/leva.cljs/tree/main#interactive-documentation-via-clerk)
@@ -53,14 +60,12 @@
 ;;    Project](https://img.shields.io/clojars/v/org.mentat/leva.cljs.svg)](https://clojars.org/org.mentat/leva.cljs)
 ;;
 ;; Or grab the most recent code using a Git dependency:
-;;
-;; ```clj
-;; ;; deps
-;; {io.github.mentat-collective/leva.cljs
-;;   {:git/sha "$GIT_SHA"}}
-;; ```
 
-;; Require `leva.core` in your namespace:
+^{::clerk/visibility {:code :hide}}
+(docs/git-dependency
+ "mentat-collective/leva.cljs")
+
+;; Require `leva.core` in your ClojureScript namespace:
 
 ;; ```clj
 ;; (ns my-app
@@ -92,7 +97,7 @@
 ;; play around with the UI elements and watch the state change:
 
 (show-sci
- [v/inspect @!synced])
+ [nextjournal.clerk.viewer/inspect @!synced])
 
 ;; > If you're not familiar with React or Reagent, or what a "component" is,
 ;; > please give the [Reagent homepage](https://reagent-project.github.io/) a
@@ -288,7 +293,7 @@
         [leva/Controls
          {:atom !state
           :schema schema}]]
-       [v/inspect @!state]]))))
+       [nextjournal.clerk.viewer/inspect @!state]]))))
 
 ;; > Some of the following examples show off inputs using `:schema` entries only
 ;; > without an associated `:atom`. This is just to keep the examples tighter.
@@ -658,7 +663,7 @@
         (b/bezier
          {:value    [0.54, 0.05, 0.6, 0.98]
           :onChange (fn [v] (reset! !local v))})}}]]
-    [v/inspect @!local]]))
+    [nextjournal.clerk.viewer/inspect @!local]]))
 
 ;; Supported options are the union
 ;; of [`InputOptions`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/types/public.ts#L182-L188)
@@ -671,6 +676,81 @@
 ;; Here is the source for the [Bezier
 ;; stories](https://github.com/pmndrs/leva/blob/main/packages/plugin-bezier/src/Bezier.stories.tsx),
 ;; for example.
+
+;; ## Leva.cljs via SCI
+;;
+;; `Leva.cljs` is compatible with [SCI, the Small Clojure
+;; Interpreter](https://github.com/babashka/sci).
+;;
+;; To install `Leva.cljs` into your SCI context, require
+;; the [`leva.sci`](https://cljdoc.org/d/org.mentat/leva.cljs/CURRENT/api/leva.sci)
+;; namespace and call `leva.sci/install!`:
+
+;; ```clj
+;; (ns myproject.sci-extensions
+;;   (:require [leva.sci]))
+
+;; (leva.sci/install!)
+;; ```
+;;
+;; If you want more granular control, see the [cljdoc page for
+;; `leva.sci`](https://cljdoc.org/d/org.mentat/leva.cljs/CURRENT/api/leva.sci)
+;; for an SCI config and distinct SCI namespace objects that you can piece
+;; together.
+;;
+;; > Note that `Leva.cljs` does not ship with a dependency on SCI, so you'll
+;; > need to install your own version.
+;;
+;; ## Leva.cljs via Clerk
+;;
+;; Using `Leva.cljs` with Nextjournal's [Clerk](https://clerk.vision/) gives you
+;; the ability to write notebooks like this one with embedded GUI controls.
+;;
+;; Doing this requires that you generate a custom ClojureScript build for your
+;; Clerk project. The easiest way to do this for an existing project is with
+;; the [`clerk-utils` project](https://clerk-utils.mentat.org/). Follow the
+;; instructions on the [`clerk-utils` guide for custom
+;; ClojureScript](https://clerk-utils.mentat.org/#custom-clojurescript-builds).
+;;
+;; If this is your first time using Clerk, use the [`leva/clerk` template
+;; described below](#project-template) to generate a new project with all steps
+;; described in ["Leva.cljs via SCI"](#leva.cljs-via-sci) already completed.
+;;
+;; ## Project Template
+;;
+;; `Leva.cljs` includes
+;; a [`deps-new`](https://github.com/seancorfield/deps-new) template called
+;; [`leva/clerk`](https://github.com/mentat-collective/clerk-utils/tree/main/resources/clerk_utils/custom)
+;; that makes it easy to configure a new Clerk project with everything described
+;; in ["Leva.cljs via SCI"](#leva.cljs-via-sci) already configured.
+
+;; First, install the [`deps-new`](https://github.com/seancorfield/deps-new) tool:
+
+;; ```sh
+;; clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.4.13"}' :as new
+;; ```
+
+;; To create a new Clerk project based on
+;; [`leva/clerk`](https://github.com/mentat-collective/leva.cljs/tree/main/resources/leva/clerk)
+;; in a folder called `my-notebook-project`, run the following command:
+
+^{::clerk/visibility {:code :hide}}
+(clerk/md
+ (format "
+```sh
+clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/sha \"%s\"}}}' \\
+-Tnew create \\
+:template leva/clerk \\
+:name myusername/my-notebook-project
+```" (docs/git-sha)))
+
+;; The README.md file in the generated project contains information on how to
+;; develop within the new project.
+
+;; If you have an existing Clerk notebook project and are considering adding
+;; `Leva.cljs`, you might consider
+;; using [`leva/clerk`](https://github.com/mentat-collective/leva.cljs/tree/main/resources/leva/clerk)
+;; to get some ideas on how to structure your own project.
 
 ;; ## Advanced Guides
 ;;
@@ -703,7 +783,7 @@
                 :point
                 {:render
                  (fn [] (:show @!local))}}}]]
-    [v/inspect @!local]]))
+    [nextjournal.clerk.viewer/inspect @!local]]))
 
 ;; ### Cursors for State
 
@@ -728,7 +808,7 @@
                     {:drag false}}
      [leva/Controls {:atom !cursor}]]
     [:pre (str @!cursor)]
-    [v/inspect @!state]]))
+    [nextjournal.clerk.viewer/inspect @!state]]))
 ;;
 ;; ### Input Ordering
 
@@ -809,7 +889,7 @@
 
 ;; ## License
 
-;; Copyright © 2022 Sam Ritchie.
+;; Copyright © 2022-2023 Sam Ritchie.
 
 ;; Distributed under the [MIT
 ;; License](https://github.com/mentat-collective/leva.cljs/blob/main/LICENSE).

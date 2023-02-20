@@ -1,4 +1,4 @@
-name: Linter
+name: CLJ-Kondo
 
 on:
   pull_request:
@@ -11,12 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Install clojure tools
-        uses: DeLaGuardo/setup-clojure@master
-        with:
-          cli: latest
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install babashka
         uses: just-sultanov/setup-babashka@v2
