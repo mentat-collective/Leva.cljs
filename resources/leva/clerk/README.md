@@ -14,7 +14,7 @@ clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.5.0"}' :a
 Then create a project using the `leva/clerk` template:
 
 ```
-clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/tag "v0.2.1" :git/sha "e227f73"}}}' \
+clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/tag "v0.2.2" :git/sha "c060095"}}}' \
 -Tnew create \
 :template leva/clerk \
 :name myusername/my-leva-project
