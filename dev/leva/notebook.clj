@@ -727,7 +727,7 @@
 ;; First, install the [`deps-new`](https://github.com/seancorfield/deps-new) tool:
 
 ;; ```sh
-;; clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.4.13"}' :as new
+;; clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.5.0"}' :as new
 ;; ```
 
 ;; To create a new Clerk project based on

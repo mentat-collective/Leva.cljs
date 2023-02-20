@@ -8,13 +8,13 @@ via Clerk"](https://leva.mentat.org/#leva.cljs-via-clerk) section of the
 To use the template, install the [`deps-new`][deps-new-url] tool:
 
 ```sh
-clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.4.13"}' :as new
+clojure -Ttools install io.github.seancorfield/deps-new '{:git/tag "v0.5.0"}' :as new
 ```
 
 Then create a project using the `leva/clerk` template:
 
 ```
-clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/sha "5b613fe5b2d4a9ad3294de51543d146a43a19ebc"}}}' \
+clojure -Sdeps '{:deps {io.github.mentat-collective/leva.cljs {:git/tag "v0.2.0" :git/sha "debc961"}}}' \
 -Tnew create \
 :template leva/clerk \
 :name myusername/my-leva-project

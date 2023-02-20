@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+## [0.2.1]
+
+- #6 bumps the `clerk-utils` version to 0.4.1 and bumps the template sha for
+  clerk-utils.
+
 ## [0.2.0]
 
 - #5:

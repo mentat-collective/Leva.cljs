@@ -2,7 +2,7 @@
  :clerk-port 7777
  :leva-version "0.2.0"
  :clerk-sha "fad499407d979916d21b33cc7e46e73f7a485e37"
- :clerk-utils-sha "718c6fa3064909b30a4668e89f3b18fe851f3d28"
+ :clerk-utils-sha "8d8986e835e396443560a34fb29a2033a47f6bd0"
  :shadow-port 8765
  :shadow-version "2.20.14"
  :clj-version "1.11.1"
