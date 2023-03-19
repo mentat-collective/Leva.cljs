@@ -136,6 +136,20 @@
      (into [:> l/LevaStoreProvider {:store store}] children)]
     (into [:<> [:> l/Leva opts]] children)))
 
+(defn ^:no-doc SubPanel*
+  "Function component that backs [[SubPanel]]. See [[SubPanel]] for detailed
+  documentation."
+  [opts & children]
+  {:pre [(not (:store opts))]}
+  (assert
+   (not (:store opts))
+   (str "`:store` is not supported by [[leva.core/SubPanel]]. "
+        "If you'd like to provide your own :store, "
+        "see [[leva.core/Config]]."))
+  (let [store (l/useCreateStore)]
+    (into [Config (assoc opts :store store)]
+          children)))
+
 (defn SubPanel
   "Component that configures a non-global, standalone Leva panel with the supplied
   map of `opts`.
@@ -147,15 +161,7 @@
   type [`LevaRootProps`](https://github.com/pmndrs/leva/blob/main/packages/leva/src/components/Leva/LevaRoot.tsx#L13-L93)
   for a full list of available entries for `opts` and documentation for each."
   [opts & children]
-  {:pre [(not (:store opts))]}
-  (assert
-   (not (:store opts))
-   (str "`:store` is not supported by [[leva.core/SubPanel]]. "
-        "If you'd like to provide your own :store, "
-        "see [[leva.core/Config]]."))
-  (let [store (l/useCreateStore)]
-    (into [Config (assoc opts :store store)]
-          children)))
+  (into [:f> SubPanel* opts] children))
 
 (defn ^:no-doc Controls*
   "Function component that backs [[Controls]]. See [[Controls]] for detailed
