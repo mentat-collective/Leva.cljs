@@ -2,6 +2,9 @@
 
 ## [unreleased]
 
+- #12 fixes #10 by turning `SubPanel` into a wrapper that properly calls (with
+  `:f>`) a new `SubPanel*` function component.
+
 ## [0.2.1]
 
 - #6 bumps the `clerk-utils` version to 0.4.1 and bumps the template sha for
