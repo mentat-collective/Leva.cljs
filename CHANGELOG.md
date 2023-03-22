@@ -2,7 +2,7 @@
 
 ## [unreleased]
 
-- :
+- #13:
 
   - Adds support for `:onChange` handlers attached to schema entries controlled
     by the provided `:atom`. If supplied, the handler will be called after the
