@@ -184,7 +184,7 @@
 ;;
 ;; A schema entry with _no_ corresponding `:atom` entry will emit a warning if
 ;; you don't provide an `:onChange` handler to capture changes in the input's
-;; value. See [explicit :onChange](#explicit-:onchange) below for more detail.
+;; value. See [explicit `onChange`](#explicit-onchange) below for more detail.
 
 ;; ### SubPanel
 
@@ -243,7 +243,7 @@
         (swap! !synced assoc :number (js/parseInt v))))}]
   [:pre (str @!synced)]])
 
-;; #### Explicit `:onChange`
+;; #### Explicit `onChange`
 
 ;; You can also configure panel elements by providing `:value` and `:onChange`
 ;; entries in the `:schema`. This example provides an initial value for a
@@ -272,7 +272,7 @@
 ;; > <number> :g <number> :b <number>}`, add these entries directly to your
 ;; > schema instead of nesting them under `:value`.
 
-;; #### Atom and `:onChange`
+;; #### Atom and `onChange`
 ;;
 ;; If you pass an `:atom` and also provide an explicit `:onChange` (or,
 ;; equivalently, `:on-change`) callback for a schema entry controlled by the
@@ -642,8 +642,8 @@
 ;; Leva is extensible, and has support for a number
 ;; of [plugins](https://github.com/pmndrs/leva/tree/main/packages). Plugins by
 ;; default will _not_ synchronize with your `:atom`; you'll have to provide
-;; an [explicit `:onChange`](#explicit-:onchange) to capture state (which you
-;; can of course `swap!` into an atom!)
+;; an [explicit `onChange`](#explicit-onchange) to capture state (which you can
+;; of course `swap!` into an atom!)
 ;;
 ;; > Once [this issue](https://github.com/mentat-collective/leva.cljs/issues/2)
 ;; > is resolved this limitation will no longer exist.
