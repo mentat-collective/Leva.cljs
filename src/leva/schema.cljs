@@ -26,6 +26,26 @@
             (swap! !state assoc k v)))))
     (fn [_k] (fn [_ _ _]))))
 
+(defn gather-callbacks
+  "Returns a version of `schema` with any `:onChange` or `:on-change` handler
+  moved to the `:onChange` key."
+  [k schema]
+  (let [camel? (contains? schema :onChange)
+        kebab? (contains? schema :on-change)]
+    (cond (and camel? kebab?)
+          (do (js/console.warn
+               "The schema entry for"
+               (str "`" (pr-str k) "`")
+               "contains `:on-change` and `:onChange`."
+               "The `:on-change` entry is being evicted"
+               "in favor of `:onChange`.")
+              (dissoc schema :on-change))
+
+          kebab?
+          (-> (dissoc schema :on-change)
+              (assoc :onChange (:on-change schema)))
+
+          :else schema)))
 (defn controlled->js
   "Given
 
@@ -39,18 +59,26 @@
   NOTE that if `v` is a map, entries in `v` will take precedence over any
   duplicates in `schema`."
   [k v schema on-change]
-  (let [m (-> (if (map? v)
+  (let [schema (gather-callbacks k schema)
+        on-change (if-let [f (:onChange schema)]
+                    (fn [& xs]
+                      (apply on-change xs)
+                      (apply f xs))
+                    on-change)
+        m (-> (if (map? v)
                 (merge schema v)
                 (assoc schema :value v))
               (assoc :onChange on-change))
         new-keys (if (map? v)
-                   (into #{:onChange} (keys v))
-                   #{:value :onChange})]
+                   (keys v)
+                   #{:value})]
     (when-let [evicted (keys (select-keys schema new-keys))]
       (js/console.warn
-       "Schema entry for " k " matches an entry in the `:atom`. "
-       "The following keys are being evicted: "
-       evicted))
+       "The schema entry for"
+       (str "`" (pr-str k) "`")
+       "matches an entry in the `:atom`."
+       "The following keys are being evicted:"
+       (pr-str evicted)))
     (clj->js m)))
 
 (defn uncontrolled->js
@@ -67,7 +95,8 @@
   `k` changes. The re-render is a waste because the user can't get at the
   changed value."
   [k schema]
-  (let [m (if (contains? schema :onChange)
+  (let [schema (gather-callbacks k schema)
+        m (if (contains? schema :onChange)
             (update schema :onChange
                     (fn [f]
                       (fn [v]
