@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+- #13:
+
+  - Adds support for `:onChange` handlers attached to schema entries controlled
+    by the provided `:atom`. If supplied, the handler will be called after the
+    update of the atom.
+
+  - Warn if the user provides both `:on-change` and `:onChange` entries, and
+    normalize both to `:onChange` during schema processing.
+
 - #12 fixes #10 by turning `SubPanel` into a wrapper that properly calls (with
   `:f>`) a new `SubPanel*` function component.
 

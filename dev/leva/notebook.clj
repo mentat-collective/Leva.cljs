@@ -184,7 +184,7 @@
 ;;
 ;; A schema entry with _no_ corresponding `:atom` entry will emit a warning if
 ;; you don't provide an `:onChange` handler to capture changes in the input's
-;; value. See [explicit onChange](#explicit-onchange) below for more detail.
+;; value. See [explicit `onChange`](#explicit-onchange) below for more detail.
 
 ;; ### SubPanel
 
@@ -243,7 +243,7 @@
         (swap! !synced assoc :number (js/parseInt v))))}]
   [:pre (str @!synced)]])
 
-;; #### Explicit onChange
+;; #### Explicit `onChange`
 
 ;; You can also configure panel elements by providing `:value` and `:onChange`
 ;; entries in the `:schema`. This example provides an initial value for a
@@ -271,6 +271,37 @@
 ;; > NOTE if your input type is a map, like a color specified via `{:r
 ;; > <number> :g <number> :b <number>}`, add these entries directly to your
 ;; > schema instead of nesting them under `:value`.
+
+;; #### Atom and `onChange`
+;;
+;; If you pass an `:atom` and also provide an explicit `:onChange` (or,
+;; equivalently, `:on-change`) callback for a schema entry controlled by the
+;; atom, the `:onChange` callback will be triggered after the update to the
+;; atom.
+;;
+;; This example shows a `SubPanel` that uses `:on-change` handlers to
+;; synchronize two sliders with values meant to sum to `100`:
+
+(show-sci
+ (reagent/with-let
+   [!probs (reagent/atom
+            {:p-x 85
+             :p-not-x 15})]
+   [:div {:style {:width "60%" :margin "auto"}}
+    [leva/SubPanel {:fill true
+                    :titleBar
+                    {:drag false}}
+     [leva/Controls
+      {:atom !probs
+       :schema
+       {:p-x
+        {:label "P(x)"
+         :min 0 :max 100 :step 1
+         :on-change #(swap! !probs assoc :p-not-x (- 100 %))}
+        :p-not-x
+        {:label "P(¬x)"
+         :min 0 :max 100 :step 1
+         :on-change #(swap! !probs assoc :p-x (- 100 %))}}}]]]))
 
 ;; ### Standard Inputs
 ;;
@@ -611,8 +642,8 @@
 ;; Leva is extensible, and has support for a number
 ;; of [plugins](https://github.com/pmndrs/leva/tree/main/packages). Plugins by
 ;; default will _not_ synchronize with your `:atom`; you'll have to provide
-;; an [explicit onChange](#explicit-onchange) to capture state (which you can of
-;; course `swap!` into an atom!)
+;; an [explicit `onChange`](#explicit-onchange) to capture state (which you can
+;; of course `swap!` into an atom!)
 ;;
 ;; > Once [this issue](https://github.com/mentat-collective/leva.cljs/issues/2)
 ;; > is resolved this limitation will no longer exist.
