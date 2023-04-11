@@ -272,6 +272,34 @@
 ;; > <number> :g <number> :b <number>}`, add these entries directly to your
 ;; > schema instead of nesting them under `:value`.
 
+;; #### Explicit `swap!` function for atom and onChange
+
+;; If you pass an :atom, any explicit :onChange callback is ignored. To control
+;; how atom state updates, instead pass an :on-swap function of three arguments
+;; to replace the default `(swap! atom k v)` behavior.
+
+;; This example shows a SubPanel that uses a custom swap function to synchronize
+;; two sliders with values summing to `1.0`:
+
+(show-sci
+
+  ; Custom swap logic depending on the changed key
+  (defmulti  on-swap (fn [!state key value] key))
+  (defmethod on-swap :default [!s k v] (swap! !s assoc k v))
+  (defmethod on-swap :p-x     [!s _ v] (swap! !s assoc :p-x v :p-not-x (- 1.0 v)))
+  (defmethod on-swap :p-not-x [!s _ v] (swap! !s assoc :p-not-x v :p-x (- 1.0 v)))
+
+  (reagent/with-let
+    [!local (reagent/atom {:p-x 0.80 :p-not-x 0.20})]
+    [:div {:style {:width "60%" :margin "auto"}}
+     [leva/SubPanel {:fill true :titleBar {:drag false}}
+      [leva/Controls
+       {:schema  {:p-x     {:label "P(x)" :min 0 :max 1 :step 0.01}
+                  :p-not-x {:label "P(¬x)" :min 0 :max 1 :step 0.01}}
+        :atom    !local
+        :on-swap on-swap}]]]))
+
+
 ;; ### Standard Inputs
 ;;
 ;; This section contains usage examples for all of the standard inputs available
