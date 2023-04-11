@@ -16,14 +16,14 @@
   "Given some atom `!state`, returns a function that accepts some `key` and
   returns a Leva OnChangeHandler that sets the entry in `!state` for `key` to
   the new incoming value."
-  [!state]
+  [!state swapf]
   (if !state
     (fn k->on-change [k]
       (fn on-change [value _path _context]
         (let [state (.-state !state)
               v     (->clj value)]
           (when (not= v (get state k ::not-found))
-            (swap! !state assoc k v)))))
+            (swapf !state k v)))))
     (fn [_k] (fn [_ _ _]))))
 
 (defn controlled->js
@@ -210,8 +210,8 @@
   The parsing logic [lives
   here](https://github.com/pmndrs/leva/blob/33b2d9948818c5828409e3cf65baed4c7492276a/packages/leva/src/useControls.ts#L30-L75)
   in leva."
-  [{:keys [folder schema atom store]}]
-  (let [k->on-change  (on-change-fn atom)
+  [{:keys [folder schema atom store on-swap]}]
+  (let [k->on-change  (on-change-fn atom (or on-swap #(swap! %1 assoc %2 %3)))
         initial-state (if atom (.-state atom) {})
         ;; NOTE This function wrapper is required for `set` to work
         ;; in [[leva.core/Controls]]. If you don't want to synchronize state
