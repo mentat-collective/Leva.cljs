@@ -274,9 +274,9 @@
 
 ;; #### Explicit `swap!` function for atom and onChange
 
-;; If you pass an :atom, any explicit :onChange callback is ignored. To control
-;; how atom state updates, instead pass an :on-swap function of three arguments
-;; to replace the default `(swap! atom k v)` behavior.
+;; If you pass an :atom, any explicit :onChange callback is ignored. Pass an
+;; :on-swap function to transform the atom state as part of the call to `swap!`
+;; to handle changes explicitly.
 
 ;; This example shows a SubPanel that uses a custom swap function to synchronize
 ;; two sliders with values summing to `1.0`:
@@ -284,20 +284,20 @@
 (show-sci
 
   ; Custom swap logic depending on the changed key
-  (defmulti  on-swap (fn [!state key value] key))
-  (defmethod on-swap :default [!s k v] (swap! !s assoc k v))
-  (defmethod on-swap :p-x     [!s _ v] (swap! !s assoc :p-x v :p-not-x (- 1.0 v)))
-  (defmethod on-swap :p-not-x [!s _ v] (swap! !s assoc :p-not-x v :p-x (- 1.0 v)))
+  (defmulti  on-swap (fn [state key old-value value] key))
+  (defmethod on-swap :p-x     [s _ _ v] (assoc s :p-not-x (- 1.0 v)))
+  (defmethod on-swap :p-not-x [s _ _ v] (assoc s :p-x (- 1.0 v)))
 
   (reagent/with-let
     [!local (reagent/atom {:p-x 0.80 :p-not-x 0.20})]
     [:div {:style {:width "60%" :margin "auto"}}
      [leva/SubPanel {:fill true :titleBar {:drag false}}
       [leva/Controls
-       {:schema  {:p-x     {:label "P(x)" :min 0 :max 1 :step 0.01}
-                  :p-not-x {:label "P(¬x)" :min 0 :max 1 :step 0.01}}
-        :atom    !local
-        :on-swap on-swap}]]]))
+       {:schema  {:p-x     {:label "P(x)" :min 0 :max 1 :step 0.01
+                            :on-swap on-swap}
+                  :p-not-x {:label "P(¬x)" :min 0 :max 1 :step 0.01
+                            :on-swap on-swap}}
+        :atom    !local}]]]))
 
 
 ;; ### Standard Inputs
