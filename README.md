@@ -24,7 +24,7 @@ Think of your GUI like an interactive, beautiful view onto your page's state.
 
 ## Quickstart
 
-Install `Leva.cljs` into your Clojurescript project using the instructions at
+Install `Leva.cljs` into your ClojureScript project using the instructions at
 its Clojars page:
 
 [![Clojars Project][clojars]][clojars-url]

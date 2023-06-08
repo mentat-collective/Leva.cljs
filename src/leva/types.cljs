@@ -1,6 +1,5 @@
 (ns leva.types
-  (:require ["leva" :as l]
-            [goog.object :as o]))
+  (:require ["leva" :as l]))
 
 ;; ## Types and Schema Predicates
 ;;

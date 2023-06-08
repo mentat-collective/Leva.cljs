@@ -720,7 +720,7 @@
 ;;
 ;; `Leva.cljs` includes
 ;; a [`deps-new`](https://github.com/seancorfield/deps-new) template called
-;; [`leva/clerk`](https://github.com/mentat-collective/clerk-utils/tree/main/resources/clerk_utils/custom)
+;; [`leva/clerk`](https://github.com/mentat-collective/leva.cljs/tree/main/resources/leva/clerk)
 ;; that makes it easy to configure a new Clerk project with everything described
 ;; in ["Leva.cljs via SCI"](#leva.cljs-via-sci) already configured.
 
