@@ -2,8 +2,7 @@
   "Functions for converting a leva.cljs schema into a Leva schema set up for state
   synchronization via a ClojureScript atom."
   (:require ["leva" :as l]
-            [leva.types :as t]
-            [goog.object :as o]))
+            [leva.types :as t]))
 
 (defn ->clj
   "Slightly more efficient `js->clj` that skips primitive types."
@@ -91,7 +90,7 @@
   [acc m k->on-change]
   (letfn [(process [acc k v]
             (doto acc
-              (o/set
+              (aset
                (name k)
                (controlled->js k v {} (k->on-change k)))))]
     (reduce-kv process acc m)))
@@ -129,7 +128,7 @@
 
             (insert! [acc k v]
               (swap! seen conj k)
-              (doto acc (o/set (name k) v)))
+              (doto acc (aset (name k) v)))
             (rec [schema]
               (reduce-kv
                (fn [acc k entry]

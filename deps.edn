@@ -1,5 +1,5 @@
 {:paths ["src" "resources"]
- :deps {reagent/reagent {:mvn/version "1.1.1"}}
+ :deps {reagent/reagent {:mvn/version "1.2.0"}}
 
  :aliases
  {:nextjournal/clerk
@@ -7,17 +7,17 @@
    :extra-deps
    {org.clojure/clojure       {:mvn/version "1.11.1"}
     org.clojure/clojurescript {:mvn/version "1.11.60"}
-    org.mentat/clerk-utils    {:mvn/version "0.4.1"}
+    org.mentat/clerk-utils    {:mvn/version "0.6.0"}
 
     io.github.nextjournal/clerk
-    {:git/sha "fad499407d979916d21b33cc7e46e73f7a485e37"}
+    {:git/sha "1f6c5331418aaf9c5a4335fc2e6e95f07dc3af6b"}
     io.github.nextjournal/clerk.render
     {:git/url "https://github.com/nextjournal/clerk"
-     :git/sha "fad499407d979916d21b33cc7e46e73f7a485e37"
+     :git/sha "1f6c5331418aaf9c5a4335fc2e6e95f07dc3af6b"
      :deps/root "render"}}
    :exec-fn user/build!}
 
   :build
-  {:deps {io.github.clojure/tools.build {:git/tag "v0.8.2" :git/sha "ba1a2bf"}
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}
           slipset/deps-deploy {:mvn/version "0.2.0"}}
    :ns-default build}}}

@@ -1,9 +1,6 @@
-^#:nextjournal.clerk
-{:toc true
- :no-cache true
- :visibility :hide-ns}
+^{:nextjournal.clerk/visibility {:code :hide}}
 (ns leva.notebook
-  {:nextjournal.clerk/auto-expand-results? true}
+  #:nextjournal.clerk{:toc true :no-cache true}
   (:require [mentat.clerk-utils.docs :as docs]
             [mentat.clerk-utils.show :refer [show-sci]]
             [nextjournal.clerk :as clerk]))
@@ -11,8 +8,8 @@
 ^{::clerk/visibility {:code :hide :result :hide}}
 (clerk/eval-cljs
  ;; These aliases only apply inside this namespace.
- '(require '[leva.core :as leva])
- '(require '[reagent.core :as reagent]))
+ '(do (require '[leva.core :as leva])
+      (require '[reagent.core :as reagent])))
 
 ;; # Leva.cljs
 ;;
@@ -720,7 +717,7 @@
 ;;
 ;; `Leva.cljs` includes
 ;; a [`deps-new`](https://github.com/seancorfield/deps-new) template called
-;; [`leva/clerk`](https://github.com/mentat-collective/clerk-utils/tree/main/resources/clerk_utils/custom)
+;; [`leva/clerk`](https://github.com/mentat-collective/leva.cljs/tree/main/resources/leva/clerk)
 ;; that makes it easy to configure a new Clerk project with everything described
 ;; in ["Leva.cljs via SCI"](#leva.cljs-via-sci) already configured.
 
