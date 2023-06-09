@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+## [0.3.0]
+
+- #16:
+
+  - removes the `goog.object` to make the library compatible with SCI
+    evaluation, needed by Portal.
+
+  - adds various build upgrades, (Clerk, Kondo etc)
+
 - #12 fixes #10 by turning `SubPanel` into a wrapper that properly calls (with
   `:f>`) a new `SubPanel*` function component.
 

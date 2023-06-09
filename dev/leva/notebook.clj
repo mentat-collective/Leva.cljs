@@ -1,9 +1,6 @@
-^#:nextjournal.clerk
-{:toc true
- :no-cache true
- :visibility :hide-ns}
+^{:nextjournal.clerk/visibility {:code :hide}}
 (ns leva.notebook
-  {:nextjournal.clerk/auto-expand-results? true}
+  #:nextjournal.clerk{:toc true :no-cache true}
   (:require [mentat.clerk-utils.docs :as docs]
             [mentat.clerk-utils.show :refer [show-sci]]
             [nextjournal.clerk :as clerk]))
@@ -11,8 +8,8 @@
 ^{::clerk/visibility {:code :hide :result :hide}}
 (clerk/eval-cljs
  ;; These aliases only apply inside this namespace.
- '(require '[leva.core :as leva])
- '(require '[reagent.core :as reagent]))
+ '(do (require '[leva.core :as leva])
+      (require '[reagent.core :as reagent])))
 
 ;; # Leva.cljs
 ;;
