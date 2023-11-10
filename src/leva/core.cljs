@@ -177,7 +177,8 @@
         !state     (:atom opts)
         initial    (if !state (.-state !state) {})
         ks         (keys initial)
-        opts       (update opts :store #(or % (l/useStoreContext)))
+        store      (l/useStoreContext)
+        opts       (update opts :store #(or % store))
 
         ;; NOTE that if we want to add a hook deps array here, we can conj it
         ;; onto the end of the vector returned by [[leva.schema/opts->argv]]. In
